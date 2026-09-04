@@ -1,26 +1,154 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./munim-theme.css";
 
+@custom-variant dark (&:is(.dark *));
+
+/* ── shadcn bridge ────────────────────────────────────────────────────────────
+ * Every shadcn/ui component consumes these semantic names. Pointing them at the
+ * Munim role tokens is what makes components/ui/* on-brand with no edits inside
+ * the components themselves. Do not put literal colours here — only var().
+ *
+ * Note: shadcn's `muted` is a SURFACE, while DESIGN.md's `--muted` is secondary
+ * TEXT. The two are reconciled in the @theme block below and `--muted` is
+ * deliberately left undefined here so the DESIGN.md meaning wins. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: var(--color-bg);
+  --foreground: var(--color-text);
+
+  --card: var(--panel);
+  --card-foreground: var(--color-text);
+  --popover: var(--panel);
+  --popover-foreground: var(--color-text);
+
+  --primary: var(--tile-bg);
+  --primary-foreground: var(--tile-fg);
+  --secondary: var(--panel-2);
+  --secondary-foreground: var(--color-text);
+  --accent: var(--panel-2);
+  --accent-foreground: var(--color-text);
+
+  /* DESIGN.md prohibits red. Destructive intent reads as the deny verdict and,
+   * per §1 rule 2, must always be paired with a word — never colour alone. */
+  --destructive: var(--deny);
+
+  --border: var(--rule);
+  --input: var(--panel-2);
+  --ring: var(--navy-500);
+
+  --chart-1: var(--bar-1);
+  --chart-2: var(--bar-2);
+  --chart-3: var(--bar-3);
+  --chart-4: var(--navy-700);
+  --chart-5: var(--track);
+
+  --sidebar: var(--panel);
+  --sidebar-foreground: var(--color-text);
+  --sidebar-primary: var(--tile-bg);
+  --sidebar-primary-foreground: var(--tile-fg);
+  --sidebar-accent: var(--panel-2);
+  --sidebar-accent-foreground: var(--color-text);
+  --sidebar-border: var(--rule);
+  --sidebar-ring: var(--navy-500);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* the muted reconciliation: surface from panel-2, foreground from DESIGN.md */
+  --color-muted: var(--panel-2);
+  --color-muted-foreground: var(--muted);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Munim role tokens exposed as utilities, so bespoke screens use bg-panel /
+   * text-muted-ink / border-rule instead of arbitrary values. */
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-surface: var(--surface);
+  --color-faint: var(--faint);
+  --color-accent-ink: var(--accent-ink);
+  --color-muted-ink: var(--muted);
+  --color-ink-invert: var(--ink-invert);
+  --color-rule: var(--rule);
+  --color-track: var(--track);
+  --color-bar-1: var(--bar-1);
+  --color-bar-2: var(--bar-2);
+  --color-bar-3: var(--bar-3);
+  --color-tile: var(--tile-bg);
+  --color-tile-foreground: var(--tile-fg);
+  --color-allow: var(--allow);
+  --color-allow-tint: var(--allow-tint);
+  --color-step: var(--step);
+  --color-step-tint: var(--step-tint);
+  --color-deny: var(--deny);
+  --color-deny-tint: var(--deny-tint);
+  --color-navy-900: var(--navy-900);
+  --color-navy-700: var(--navy-700);
+  --color-navy-500: var(--navy-500);
+  --color-navy-200: var(--navy-200);
+  --color-navy-050: var(--navy-050);
+
+  /* Outfit is the only typeface. §2 forbids a second face, so heading and mono
+   * resolve to it too; tabular figures come from font-variant-numeric. */
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+  --font-heading: var(--font-outfit), system-ui, sans-serif;
+  --font-mono: var(--font-outfit), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  html {
+    @apply font-sans;
+  }
+  body {
+    /* 14px/1.6 is the Munim body default, not 16px (DESIGN.md §2) */
+    @apply bg-background text-foreground text-body;
+  }
+  /* §2 rule 3: paragraphs never run full-bleed. §2 rule 6: no italics. */
+  p {
+    max-width: 660px; /* override with max-w-none where a panel must fill */
+    text-wrap: pretty;
+  }
+  em,
+  i {
+    font-style: normal;
+    font-weight: 500;
+  }
+  /* §2 rule 5: comparable numbers align */
+  th,
+  td {
+    font-variant-numeric: tabular-nums;
+  }
 }
