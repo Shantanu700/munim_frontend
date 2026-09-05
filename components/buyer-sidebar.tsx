@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { KeyRoundIcon, ShieldCheckIcon, ShieldPlusIcon } from "lucide-react"
+import { KeyRoundIcon, ReceiptIcon, ShieldCheckIcon, ShieldPlusIcon } from "lucide-react"
 
 import { NavUser } from "@/components/nav-user"
 import {
@@ -19,11 +19,13 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-/** Write, then read — the two halves of what used to be one Authorisations screen — then the
-    buyer's own platform keys, which authorise their tools rather than an agent. */
+/** Write, then read — the two halves of what used to be one Authorisations screen — then what
+    those mandates actually bought, and last the buyer's own platform keys, which authorise
+    their tools rather than an agent. */
 const NAV = [
   { href: "/buyer", label: "Create mandate", icon: ShieldPlusIcon },
   { href: "/buyer/mandates", label: "Mandates", icon: ShieldCheckIcon },
+  { href: "/buyer/orders", label: "Orders", icon: ReceiptIcon },
   { href: "/buyer/api-keys", label: "API keys", icon: KeyRoundIcon },
 ] as const
 
@@ -47,7 +49,7 @@ export function BuyerSidebar({
           <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-navy-700 font-medium text-navy-050">
             म
           </span>
-          <span className="text-section group-data-[collapsible=icon]:hidden">munim</span>
+          <span className="text-section font-semibold tracking-tight group-data-[collapsible=icon]:hidden">munim</span>
         </div>
       </SidebarHeader>
 

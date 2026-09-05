@@ -40,6 +40,12 @@ const LABEL = "px-1 text-eyebrow uppercase text-navy-200";
     Same literal as `razorpay/page.tsx`'s `ON_NAVY` — two call sites, so still local to each. */
 const ON_NAVY = "bg-navy-200 text-navy-900 hover:bg-navy-200/85";
 
+/* The platform-wide MCP endpoint every buyer key is used against. It is on no endpoint —
+   `Login.merchant` is `null` for a buyer and nothing reports a platform URL — so it comes
+   from the environment rather than being guessed off `API_BASE`. Unset renders nothing:
+   a wrong address here is worse than none, since a key is only useful against a real one. */
+const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL;
+
 /**
  * Two states, not `MandateList`'s four: `revoked_at` is the whole of it. §1 rule 2 still
  * applies — the word carries the meaning and the colour only seconds it.
@@ -259,6 +265,28 @@ export function ApiKeysScreen() {
           <Button type="submit" disabled={busy} className={cn("mt-6 h-11 w-full", ON_NAVY)}>
             {busy ? "Working…" : "Create key"}
           </Button>
+          {/* The address the key is used against, in the same panel as the key itself —
+              one is useless without the other. Compact: the button is the narrow half, so
+              this costs one row rather than three. */}
+          {MCP_URL ? (
+            <div className="mt-6 border-t border-navy-200/20 pt-4">
+              <div className={LABEL}>MCP endpoint</div>
+              <div className="mt-1.5 flex items-center gap-2">
+                <code className="min-w-0 flex-1 truncate text-meta text-navy-200">
+                  {MCP_URL}
+                </code>
+                <CopyButton
+                  value={MCP_URL}
+                  size="sm"
+                  aria-label="Copy the MCP endpoint to the clipboard"
+                  copiedLabel="Endpoint copied."
+                  className={cn("h-8 shrink-0 px-3", ON_NAVY)}
+                >
+                  Copy
+                </CopyButton>
+              </div>
+            </div>
+          ) : null}
         </form>
       </div>
     </div>

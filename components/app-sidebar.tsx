@@ -4,6 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  BanknoteIcon,
   CircleQuestionMarkIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
@@ -49,6 +50,7 @@ const NAV = [
     items: [
       { title: "Overview", url: "/dashboard", icon: LayoutDashboardIcon },
       { title: "Orders", url: ORDERS, icon: ShoppingBagIcon },
+      { title: "Payments", url: "/dashboard/payments", icon: BanknoteIcon },
       { title: "Products", url: "/dashboard/products", icon: PackageIcon },
       { title: "Ledger", url: "/dashboard/ledger", icon: ScrollTextIcon },
       { title: "Policy", url: "/dashboard/policy", icon: ShieldCheckIcon },
@@ -111,7 +113,7 @@ export function AppSidebar({
           <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-navy-700 font-medium text-navy-050">
             म
           </span>
-          <span className="text-section group-data-[collapsible=icon]:hidden">munim</span>
+          <span className="text-section font-semibold tracking-tight group-data-[collapsible=icon]:hidden">munim</span>
         </div>
       </SidebarHeader>
 

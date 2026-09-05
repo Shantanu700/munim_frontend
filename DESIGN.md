@@ -189,6 +189,8 @@ Gradient backgrounds · emoji · decorative icons (see §7 for the navigation ca
 | Typeface | `app/layout.tsx` — Outfit only, one variable font |
 | Light/dark switch | `.dark` on `<html>`: the no-flash script in `app/layout.tsx` sets it before paint, `components/theme-toggle.tsx` flips it. No `next-themes`. |
 | §6 cards, rows, tiles, verdict pills, bar meter | `components/dashboard/parts.tsx` |
+| §10 curves, durations, the three keyframes | `app/munim-theme.css` |
+| §10 reduced motion | `app/globals.css`, unlayered so its `!important` wins |
 
 Every rule above that a tool can enforce is a token or a utility, so the way to
 follow this document is to use the generated classes rather than to re-read it:
@@ -211,13 +213,81 @@ shadcn class.
    for link ink; Tailwind's `accent` is a hover *surface* that shadcn menus rely on.
    The link colour is `--accent-ink` here (`text-accent-ink`).
 4. **Buttons.** §6 makes every button a pill, so `components/ui/button.tsx`
-   defaults to `rounded-full`. That, the `TooltipProvider` in `sidebar.tsx`, and
-   that file's `floating` panel taking `shadow-card` with no ring (§5) are the only
-   edits inside `components/ui/` — everything else inherits the design through the
-   token bridge, which is why re-running `shadcn add` costs almost nothing.
+   defaults to `rounded-full`. That, the `TooltipProvider` in `sidebar.tsx`, that
+   file's `floating` panel taking `shadow-card` with no ring (§5), and its four
+   `ease-linear`s becoming `ease-out-quart` (§10) are the only edits inside
+   `components/ui/` — everything else inherits the design through the token bridge,
+   which is why re-running `shadcn add` costs almost nothing.
 
 ### Not built yet
 
 The §6 stepper is described but has no component. Build it when a screen needs one, not
 before. (The bar meter was in this list until the merchant dashboard needed it; it now
 lives in `components/dashboard/parts.tsx`.)
+
+---
+
+## 10. Motion
+
+Appended after §9 rather than slotted in beside §5, because the numbers above are cited by
+name all over the codebase and renumbering them would silently rewrite thirty comments.
+
+Motion here reports state. It never decorates, never announces a page, and never asks to be
+watched — the brand is "trustworthy, precise, in-control", and a dashboard that performs for
+its reader is none of those. If an animation would still look right with its meaning removed,
+it is decoration and does not go in.
+
+### Curves — two, and nothing between
+
+| Token | Value | Use |
+|---|---|---|
+| `--ease-out-quart` | `cubic-bezier(0.25, 1, 0.5, 1)` | Everything. It is the default. |
+| `--ease-out-quint` | `cubic-bezier(0.22, 1, 0.36, 1)` | A control that physically moves. |
+
+No bounce, no elastic, no `ease-in-out`. Nothing eases *in*: every motion in the app is a
+result arriving, and a result that starts slowly reads as hesitation.
+
+### Durations
+
+| Length | Use |
+|---|---|
+| 180ms | The default. Colour, tint, hover, selection, focus — anything that repaints. |
+| 260ms | A control whose position changes. Currently only the agent-traffic knob. |
+| 500ms | A determinate progress bar catching up to a figure the server just sent. |
+
+180ms is set as Tailwind's `--default-transition-duration`, and `--ease-out-quart` as its
+`--default-transition-timing-function`. That is the enforcement: a bare `transition-colors`
+anywhere in the app is already on-system, and `duration-*` / `ease-*` appear in markup only
+where a control has a reason to differ. Two of those exist. Adding a third needs one.
+
+### The three keyframes
+
+| Utility | What it reports |
+|---|---|
+| `animate-row-in` | A row that was not on screen a moment ago now is — 260ms, 6px, `both`. |
+| `animate-heartbeat` | The gate is armed and traffic is passing. 2.4s, shallow, one state only. |
+| `animate-sweep` | Work of unknown length is in progress. Indeterminate bars only. |
+
+`animate-row-in` is applied by row *identity*, never by a `scanning`-style flag: adding an
+animation class to elements that are already mounted replays it on every one of them, so a
+flag would flash the whole list. Compare against the set of rows present at first paint.
+There is no stagger anywhere and none is wanted — rows arrive at the pace the API sends
+them, which is a real rhythm, and a synthetic delay on top only makes a fast response feel
+slow.
+
+### Strict rules
+
+1. **No page-load choreography.** Screens arrive into a task. Nothing fades in because the
+   route changed, and no section reveals on scroll.
+2. **Animate `transform`, `opacity` and colour.** `width` is allowed on a progress bar,
+   which is what a progress bar is. Never `left`, `top`, `height` or a margin.
+3. **One state, not both.** A pulse that runs whether the gate is armed or stopped reports
+   nothing. If motion cannot distinguish two states, it is not carrying meaning.
+4. **Motion never carries meaning alone**, the same way colour does not (§1 rule 2). Every
+   animated state also says its state in a word.
+5. **`prefers-reduced-motion` collapses everything to ~0ms**, and every screen must still be
+   complete and readable at that setting. Nothing may be hidden behind a transition or an
+   unfilled keyframe: `row-in` fills `both` for exactly this reason, and the indeterminate
+   sweep hides itself rather than freezing at a width it never measured.
+6. **No motion library.** CSS and the tokens above. `tw-animate-css` (already imported) and
+   vaul's own drawer transitions cover the overlays; nothing else earns a dependency.

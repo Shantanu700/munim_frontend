@@ -62,10 +62,16 @@ export function Topbar({
               agentsOn ? "bg-navy-700" : "bg-step"
             )}
           >
+            {/* Transform, not `left`: the knob is the one thing on screen that has to
+                move, and moving it by a layout property re-lays-out the switch on every
+                frame. 260ms on the quint curve — a shade longer and more decisive than
+                the 180ms default, because this is the control that arms and disarms the
+                whole store, and it should read as a lever being thrown rather than a
+                colour quietly changing. */}
             <span
               className={cn(
-                "absolute top-[3px] size-4 rounded-full bg-panel transition-[left]",
-                agentsOn ? "left-[21px]" : "left-[3px]"
+                "absolute top-[3px] left-[3px] size-4 rounded-full bg-panel transition-transform duration-260 ease-out-quint",
+                agentsOn ? "translate-x-[18px]" : "translate-x-0"
               )}
             />
           </span>

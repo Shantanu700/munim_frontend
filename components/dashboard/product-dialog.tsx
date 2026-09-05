@@ -7,13 +7,13 @@ import { toast } from "sonner";
 import { RED_SOLID, RED_TINT } from "@/components/dashboard/parts";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Popover,
   PopoverContent,
@@ -124,154 +124,165 @@ export function ProductDialog({
   }
 
   return (
-    <Dialog
+    <Drawer
       open
+      direction="right"
       onOpenChange={(next) => {
         if (!next) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{uuid === null ? "Add a product" : "Edit product"}</DialogTitle>
-          <DialogDescription>
-            {detail?.url ? (
-              // The row itself is a button, so this is where the storefront link lives —
-              // a link inside that button would be invalid markup and unreachable anyway.
-              <a href={detail.url} target="_blank" rel="noreferrer noopener">
-                Open on your storefront <ExternalLinkIcon className="inline size-3.5" />
-              </a>
+      <DrawerContent className="data-[vaul-drawer-direction=right]:sm:max-w-lg">
+        {/* `DrawerContent` pads 6px, not 24px — its surface floats inset from the viewport —
+            so each of the three sections carries its own p-6, and the middle one owns the
+            scroll so the footer's buttons stay reachable on a short screen. */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <DrawerHeader className="gap-0 p-6 pb-0">
+            <DrawerTitle className="text-card-title">
+              {uuid === null ? "Add a product" : "Edit product"}
+            </DrawerTitle>
+            <DrawerDescription className="mt-1 text-meta text-muted-ink">
+              {detail?.url ? (
+                // The row itself is a button, so this is where the storefront link lives —
+                // a link inside that button would be invalid markup and unreachable anyway.
+                <a href={detail.url} target="_blank" rel="noreferrer noopener">
+                  Open on your storefront <ExternalLinkIcon className="inline size-3.5" />
+                </a>
+              ) : (
+                "Agents read these fields. Anything you leave blank stays an unfilled bar."
+              )}
+            </DrawerDescription>
+          </DrawerHeader>
+
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            {loading ? (
+              <p className="py-6 text-center text-body text-muted-ink">Loading…</p>
             ) : (
-              "Agents read these fields. Anything you leave blank stays an unfilled bar."
+              <form id="product-form" onSubmit={submit} className="grid gap-3.5 sm:grid-cols-2">
+                <Field label="Product URL" className="sm:col-span-2">
+                  <input
+                    name="url"
+                    type="url"
+                    required
+                    defaultValue={detail?.url ?? ""}
+                    placeholder="https://yourstore.com/products/…"
+                    className={INPUT}
+                  />
+                </Field>
+
+                <Field label="Title" className="sm:col-span-2">
+                  <input name="title" required defaultValue={detail?.title ?? ""} className={INPUT} />
+                </Field>
+
+                <Field label="Price (₹)">
+                  <input
+                    name="price"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    required
+                    defaultValue={detail ? String(detail.price_paise / 100) : ""}
+                    className={`${INPUT} tabular-nums`}
+                  />
+                </Field>
+
+                <Field label="SKU">
+                  <input name="sku" defaultValue={detail?.sku ?? ""} className={INPUT} />
+                </Field>
+
+                <Field label="Currency">
+                  <input name="currency" defaultValue={detail?.currency ?? "INR"} className={INPUT} />
+                </Field>
+
+                <Field label="Availability">
+                  {/* Native select: three options on one screen, and a shadcn Select would be a
+                      new primitive for this one control. */}
+                  <select
+                    name="in_stock"
+                    defaultValue={detail?.in_stock === undefined || detail?.in_stock === null ? "" : String(detail.in_stock)}
+                    className={`${INPUT} px-4`}
+                  >
+                    <option value="">Not published</option>
+                    <option value="true">In stock</option>
+                    <option value="false">Out of stock</option>
+                  </select>
+                </Field>
+
+                <Field label="Image URL" className="sm:col-span-2">
+                  <input
+                    name="image_url"
+                    type="url"
+                    defaultValue={detail?.image_url ?? ""}
+                    className={INPUT}
+                  />
+                </Field>
+
+                <label className="flex items-center gap-2.5 px-1 sm:col-span-2">
+                  <input
+                    type="checkbox"
+                    name="is_visible_to_agents"
+                    defaultValue="on"
+                    defaultChecked={detail?.is_visible_to_agents ?? true}
+                    className="size-4 accent-navy-900"
+                  />
+                  <span className="text-body">
+                    Visible to agents
+                    <span className="text-muted-ink"> — uncheck to hide it without deleting it.</span>
+                  </span>
+                </label>
+              </form>
             )}
-          </DialogDescription>
-        </DialogHeader>
-
-        {loading ? (
-          <p className="py-6 text-center text-body text-muted-ink">Loading…</p>
-        ) : (
-          <form id="product-form" onSubmit={submit} className="grid gap-3.5 sm:grid-cols-2">
-            <Field label="Product URL" className="sm:col-span-2">
-              <input
-                name="url"
-                type="url"
-                required
-                defaultValue={detail?.url ?? ""}
-                placeholder="https://shoprabistha.com/products/…"
-                className={INPUT}
-              />
-            </Field>
-
-            <Field label="Title" className="sm:col-span-2">
-              <input name="title" required defaultValue={detail?.title ?? ""} className={INPUT} />
-            </Field>
-
-            <Field label="Price (₹)">
-              <input
-                name="price"
-                type="number"
-                min={0}
-                step="0.01"
-                required
-                defaultValue={detail ? String(detail.price_paise / 100) : ""}
-                className={`${INPUT} tabular-nums`}
-              />
-            </Field>
-
-            <Field label="SKU">
-              <input name="sku" defaultValue={detail?.sku ?? ""} className={INPUT} />
-            </Field>
-
-            <Field label="Currency">
-              <input name="currency" defaultValue={detail?.currency ?? "INR"} className={INPUT} />
-            </Field>
-
-            <Field label="Availability">
-              {/* Native select: three options on one screen, and a shadcn Select would be a
-                  new primitive for this one control. */}
-              <select
-                name="in_stock"
-                defaultValue={detail?.in_stock === undefined || detail?.in_stock === null ? "" : String(detail.in_stock)}
-                className={`${INPUT} px-4`}
-              >
-                <option value="">Not published</option>
-                <option value="true">In stock</option>
-                <option value="false">Out of stock</option>
-              </select>
-            </Field>
-
-            <Field label="Image URL" className="sm:col-span-2">
-              <input
-                name="image_url"
-                type="url"
-                defaultValue={detail?.image_url ?? ""}
-                className={INPUT}
-              />
-            </Field>
-
-            <label className="flex items-center gap-2.5 px-1 sm:col-span-2">
-              <input
-                type="checkbox"
-                name="is_visible_to_agents"
-                defaultValue="on"
-                defaultChecked={detail?.is_visible_to_agents ?? true}
-                className="size-4 accent-navy-900"
-              />
-              <span className="text-body">
-                Visible to agents
-                <span className="text-muted-ink"> — uncheck to hide it without deleting it.</span>
-              </span>
-            </label>
-          </form>
-        )}
-
-        <DialogFooter className="sm:justify-between">
-          {uuid === null ? (
-            <span />
-          ) : (
-            // A popover, not a second dialog: it asks in place, over the button that armed
-            // it, and needs no overlay stacked on this one. Radix keeps it above the dialog
-            // as a nested layer, so Escape closes the question and leaves the editor open.
-            <Popover open={confirming} onOpenChange={setConfirming}>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className={RED_TINT}
-                  disabled={saving}
-                >
-                  Delete
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" side="top">
-                <PopoverHeader>
-                  <PopoverTitle>Delete this product?</PopoverTitle>
-                  <PopoverDescription>
-                    Agents stop seeing it at once. A rescan of your storefront brings it back —
-                    a row you typed by hand does not come back.
-                  </PopoverDescription>
-                </PopoverHeader>
-                <div className="flex justify-end gap-2">
-                  <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
-                    Keep it
-                  </Button>
-                  <Button type="button" className={RED_SOLID} onClick={remove} disabled={saving}>
-                    {saving ? "Deleting…" : "Delete"}
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-          <div className="flex flex-col-reverse gap-2 sm:flex-row">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
-            <Button type="submit" form="product-form" disabled={saving || loading}>
-              {saving ? "Saving…" : uuid === null ? "Add product" : "Save changes"}
-            </Button>
           </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          <DrawerFooter className="flex-row justify-between gap-2.5 p-6 pt-0">
+            {uuid === null ? (
+              <span />
+            ) : (
+              // A popover, not a second drawer: it asks in place, over the button that armed
+              // it, and needs no overlay stacked on this one. vaul is Radix Dialog underneath,
+              // so the popover registers as a nested layer the same way it did in the dialog —
+              // Escape closes the question and leaves the editor open.
+              <Popover open={confirming} onOpenChange={setConfirming}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    className={RED_TINT}
+                    disabled={saving}
+                  >
+                    Delete
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="start" side="top">
+                  <PopoverHeader>
+                    <PopoverTitle>Delete this product?</PopoverTitle>
+                    <PopoverDescription>
+                      Agents stop seeing it at once. A rescan of your storefront brings it back —
+                      a row you typed by hand does not come back.
+                    </PopoverDescription>
+                  </PopoverHeader>
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="ghost" onClick={() => setConfirming(false)}>
+                      Keep it
+                    </Button>
+                    <Button type="button" className={RED_SOLID} onClick={remove} disabled={saving}>
+                      {saving ? "Deleting…" : "Delete"}
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+            <div className="flex flex-col-reverse gap-2 sm:flex-row">
+              <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
+                Cancel
+              </Button>
+              <Button type="submit" form="product-form" disabled={saving || loading}>
+                {saving ? "Saving…" : uuid === null ? "Add product" : "Save changes"}
+              </Button>
+            </div>
+          </DrawerFooter>
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 }
 

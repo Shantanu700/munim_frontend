@@ -152,3 +152,24 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* ── Reduced motion ───────────────────────────────────────────────────────────
+ * Every animation in this app reports a state, so none of them is load-bearing:
+ * collapsing them to ~0ms leaves the same interface with the same information,
+ * which is exactly what a reader who asked for less motion should get.
+ *
+ * Deliberately unlayered. `!important` inside `@layer` loses to `!important`
+ * outside one, and this has to beat the inline transitions vaul writes onto the
+ * drawer as well as anything a utility sets. `animation-duration` rather than
+ * `animation: none` so `both`-filled keyframes still land on their final frame —
+ * `none` would strand a row at `opacity: 0`. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

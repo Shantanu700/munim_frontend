@@ -8,6 +8,7 @@ import {
   getIngest,
   getIngestProducts,
   postIngest,
+  postIngestCancel,
   postIngestProducts,
   putIngestProducts,
   type IngestRequest,
@@ -33,7 +34,13 @@ export type IngestProgress = {
 };
 
 /** `running` is ours: the socket is open. The rest are the job's own status strings. */
-export type IngestStatus = "loading" | "idle" | "running" | "succeeded" | "failed";
+export type IngestStatus =
+  | "loading"
+  | "idle"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled";
 
 const OFFLINE = "Could not reach the server. Check your connection and try again.";
 
@@ -64,6 +71,9 @@ export function useIngest() {
   // The live connection, so `start()` can replace one and unmount can close it. A ref,
   // not state: nothing renders from it, and re-rendering on connect would be a wasted pass.
   const source = React.useRef<EventSource | null>(null);
+  // The job the open stream belongs to, so `cancel()` has a uuid to address. A ref for the
+  // same reason: `status === "running"` is what renders the Stop button, not this.
+  const job = React.useRef<string | null>(null);
   // Likewise the page we are on. `hasMore` is derived from `count`, so nothing reads this
   // during a render — only `loadMore` does, and a ref keeps it out of every callback's deps.
   const page = React.useRef(1);
@@ -90,8 +100,9 @@ export function useIngest() {
   );
 
   const open = React.useCallback(
-    (streamUrl: string) => {
+    (jobUuid: string, streamUrl: string) => {
       source.current?.close();
+      job.current = jobUuid;
       // withCredentials, or the sessionid cookie is not sent and the stream 401s. This is
       // EventSource's own flag — the fetch client's `credentials: "include"` is unrelated.
       const es = new EventSource(API_BASE + streamUrl, { withCredentials: true });
@@ -118,13 +129,18 @@ export function useIngest() {
       es.addEventListener("done", (event) => {
         const final: IngestProgress = JSON.parse(event.data);
         setProgress(final);
-        setStatus("succeeded");
         close();
-        toast.success(
-          final.created || final.updated
-            ? `Scan finished. ${final.created} new, ${final.updated} updated.`
-            : "Scan finished."
-        );
+        // A cancelled run ends with `done` too — the job settles on `cancelled` and the
+        // stream closes normally. It is not a failure and not a success: the rows already
+        // read are kept, which is what the toast has to say.
+        const stopped = final.status === "cancelled";
+        setStatus(stopped ? "cancelled" : "succeeded");
+        const kept = `${final.created} new, ${final.updated} updated.`;
+        if (stopped) toast.info(`Scan stopped. Kept ${kept}`);
+        else
+          toast.success(
+            final.created || final.updated ? `Scan finished. ${kept}` : "Scan finished."
+          );
         // A rescan emits no `product` event for a row that already existed — the backend
         // signal fires on create only, to stay aligned with `created_count` — so refetching
         // page one is the only way an updated price reaches the table. It drops any extra
@@ -164,7 +180,7 @@ export function useIngest() {
           return;
         }
         setMerchant({ domain: data.domain, mcpUrl: data.mcp_url });
-        if (data.stream_url) open(data.stream_url);
+        if (data.job && data.stream_url) open(data.job, data.stream_url);
         else setStatus("idle");
       })
       .catch(() => {
@@ -190,7 +206,7 @@ export function useIngest() {
         const { data, error } = await postIngest({ body });
         if (!data) return toast.error(describeApiError(error), { id });
         setMerchant((current) => ({ ...current, mcpUrl: data.mcp_url }));
-        open(data.stream_url);
+        open(data.job, data.stream_url);
         toast.success("Scan started. Products appear as they are read.", { id });
       } catch {
         toast.error(OFFLINE, { id });
@@ -198,6 +214,27 @@ export function useIngest() {
     },
     [open]
   );
+
+  /**
+   * Stop the run in flight. Nothing is set here on the way out: the server closes the stream
+   * with a final `done` carrying `status: "cancelled"`, and that handler above is the single
+   * place the screen leaves `running` — so a cancel that races a job finishing on its own
+   * cannot report a stop that did not happen. `cancelled: false` is exactly that race, and
+   * the endpoint is idempotent, so a second click is safe.
+   */
+  const cancel = React.useCallback(async () => {
+    const uuid = job.current;
+    if (!uuid) return;
+    const id = toast.loading("Stopping the scan…");
+    try {
+      const { data, error } = await postIngestCancel({ path: { job_uuid: uuid } });
+      if (!data) return toast.error(describeApiError(error), { id });
+      if (data.cancelled) toast.info("Stopping. Products already read are kept.", { id });
+      else toast.info("The scan had already finished.", { id });
+    } catch {
+      toast.error(OFFLINE, { id });
+    }
+  }, []);
 
   // The three writes. No optimism: create and update both return the saved row, so the
   // table shows what the server stored rather than what the form guessed. Each answers
@@ -279,6 +316,7 @@ export function useIngest() {
     busy,
     merchant,
     start,
+    cancel,
     loadMore,
     create,
     update,

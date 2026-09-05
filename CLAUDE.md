@@ -53,10 +53,11 @@ Adding UI components: `bunx shadcn@latest add <name>` — it respects `component
 
 ## State of the app
 
-Twelve routes. `/` redirects to `/dashboard` and `/auth` is the login/register screen; the
-merchant has seven under `/dashboard` — the Overview, `orders` (the orders list), `products`
+Fourteen routes. `/` is the landing page and `/auth` is the login/register screen; the
+merchant has eight under `/dashboard` — the Overview, `orders` (the orders list), `payments`
+(the payment attempts behind them), `products`
 (the catalogue), `ledger` (the audit ledger), `policy` (the store policy editor),
-`razorpay` (the payout screen) and `webhooks` (the webhook-hit log) — and the buyer has three
+`razorpay` (the payout screen) and `webhooks` (the webhook-hit log) — and the buyer has four
 under `/buyer`, covered in *The buyer area*. Everything below this line describes the merchant side unless it says otherwise.
 
 `app/dashboard/layout.tsx` is the auth guard. It has to be a client component — the
@@ -205,17 +206,20 @@ The rest:
 - **Timestamps arrive ISO-8601 and are formatted here** — the client knows the reader's
   timezone where the server only knows the merchant's. `moment()` in `parts.tsx` does it.
 - The table is products' **container-query** table (`@[42.5rem]`, five columns, one DOM), not
-  the ledger's `min-w-195` horizontal scroll — this panel is much wider at xl, where the detail
-  rail sits beside it, than at lg. Status sits before agent in the DOM (card reading order,
+  the ledger's `min-w-195` horizontal scroll — this panel spans the page at xl but sits inside
+  the sidebar's remainder at lg. Status sits before agent in the DOM (card reading order,
   since status is what a merchant scans for) and `@[42.5rem]:order-*` puts it back last.
-- Row selection and the detail rail are the ledger's inspector pattern, including the fallback
-  to `rows[0]` when the filter excludes the selected row, and the `detail?.uuid === order?.uuid`
-  guard that replaces a clearing setState in the effect. `GET /orders/{uuid}` is a second call
-  the rail cannot avoid: `product_url`, `unit_price_paise`, `reference_id` and the two reason
-  sentences are on no list row. Both `failure_reason_description` and
-  `step_up_reason_description` are **blank in the ordinary case** — an order exists only on an
-  ALLOW — so they are skipped rather than rendered empty, the ledger's rule again. The
-  storefront link lives in the rail because a list row is a `RowButton` and may hold no link.
+- **The detail is a right-side `Drawer`**, the ledger's pattern and the buyer orders screen's
+  before it, so the table gets the full page width. `useOrders` has **no `rows[0]` fallback**:
+  nothing selected means the drawer is shut, and `open` is derived from the *row* rather than
+  from raw `selected`, so an order the filter now excludes closes the drawer instead of leaving
+  an empty one standing. `detail?.uuid === order?.uuid` still guards the second call, replacing
+  a clearing setState in the effect. `GET /orders/{uuid}` is a call the drawer cannot avoid:
+  `product_url`, `unit_price_paise`, `reference_id` and the two reason sentences are on no list
+  row. Both `failure_reason_description` and `step_up_reason_description` are **blank in the
+  ordinary case** — an order exists only on an ALLOW — so they are skipped rather than rendered
+  empty, the ledger's rule again. The storefront link lives in the drawer because a list row is
+  a `RowButton` and may hold no link.
 - **"See the decision behind it" is built from `decision_seq`**, not `decision_url`: that field
   is an API path, not a route on this dashboard. It links to `/dashboard/ledger?seq=N`.
 - `ExportButton` takes the **thunk** form and hits `GET /orders/export`, which honours the
@@ -223,6 +227,52 @@ The rest:
   the pages already scrolled past. Unlike the ledger's export it caps: `truncated` is warned
   about out loud, since a short file with no notice is worse than a refusal. Still JSON rather
   than the design's "Export CSV" — the endpoint answers JSON and nothing here needs a serialiser.
+
+## The Payments screen
+
+`/dashboard/payments` is the orders screen with the API shrunk to two endpoints, and it is
+live. `hooks/use-payments.ts` owns the flow; `app/dashboard/payments/page.tsx` is the screen.
+A row is one payment *link*, so an order that took three goes to settle is three rows here —
+which is the question this list exists to answer.
+
+The envelope is orders' own `{results, next_cursor, has_more, total}`, so all four of that
+hook's traps carry over verbatim: `cursor`/`generation` refs, `.then` chains rather than
+`await`, `total` written through **only** when it is not null, and `LoadMore` gated on
+`has_more`. What differs:
+
+- **There is no counts, tiles or export endpoint.** `GET /payments/` and
+  `GET /payments/{uuid}` are the whole API. So the pills are a hard-coded list carrying **no
+  numbers** (a count this screen cannot source would be a count it invented), there is no
+  `StatTile` row, no dark panel and no export button — the buyer orders screen's reasoning,
+  for the same reason.
+- **`all` is not a status.** `?status=` takes `paid|pending|failed|expired`; "every status" is
+  the parameter being *absent*, so the All pill carries `null`.
+- **`live` is a filter of its own, not a fifth pill.** A link stays `pending` until the reaper
+  closes it, so a lapsed one reads pending and `live=false` for as long as an hour — status
+  alone cannot answer what is still payable. It is only ever sent as `true`; `live=false`
+  would be a third state ("everything not payable") that no one asked for.
+- **`PaymentStatusPill` is not `OrderStatusPill`**, though the wire enums are identical
+  (`Status752Enum` = `Status04aEnum`). An order reading `pending` waits on a human to approve
+  it; a payment link reading `pending` has simply not been paid. Reusing the order pill printed
+  "Awaiting approval" over a link nobody had opened. Both now share one `StatusPill` body in
+  `parts.tsx` and differ only in their label map.
+- **`amount_paise` is *this link's* amount** and may differ from the order's: a retry re-runs
+  the gate against the live page and the price it finds there may have moved. The order's
+  amount is deliberately not carried on the row, so never present one as the other.
+- **`getPayment` is called for exactly one field.** `PaymentDetail` is a strict superset of
+  `PaymentRow` plus `decision_seq`/`decision_url` — the decision behind *this* retry, where
+  `Order.ledger_seq` holds the one behind the order. So the drawer is fully readable the moment
+  it opens and only the "See decision N" link waits on the second call. `decision_url` is an
+  API path, not a route here, so the link is built from `decision_seq` as orders' is.
+- **`short_url` is offered on `is_live`, not on `status === "pending"`** — the buyer orders
+  screen's rule, tightened by the field that exists for it. `failure_reason_description` is
+  blank in the ordinary case and is skipped rather than rendered empty.
+- `amount_paid_paise` is nullable and a partial capture is worth naming, so the check is
+  `!= null` — truthiness would hide a genuine zero.
+
+`?order=<uuid>` (every attempt against one order) is on the endpoint and **not wired**: it
+needs the server-page/`searchParams` split `ledger` uses for `?seq=`, and nothing links to it
+yet. Add it with the link from the orders drawer, not before.
 
 ## The Products screen
 
@@ -258,6 +308,18 @@ real conditions, not a URL param.
   `credentials: "include"` does **not** reach it. Named events only: `progress`, `product`,
   `done`, `error`.
 
+- `POST /ingest/{job}/cancel` stops a run in flight, and the Stop button beside the scan
+  submit is its only caller. It sets **no state on the way out**: the server closes the stream
+  with a final `done` carrying `status: "cancelled"`, so that one handler stays the single
+  place the screen leaves `running`. `cancelled: false` in the response is the race where the
+  job finished on its own a moment earlier — reported as "already finished", never as a stop.
+  It is idempotent, and products already read are kept, so there is no confirm. `open()` takes
+  the job uuid alongside the stream url purely so this has something to address; `IngestState.job`
+  is nullable, hence the `data.job && data.stream_url` guard on rejoin. The progress bar is drawn
+  only while `running` or `succeeded`: a track left at 30% after a Stop claims the other 70% is
+  still coming, and an empty one under "Discovering pages…" says the same thing where `total`
+  never landed. A run that ends early keeps its counters — those are facts — and loses the track.
+
 Two traps in that stream. Its `error` event is **two** different failures sharing one name —
 a `MessageEvent` carrying data means the job failed and the message is written for a merchant
 to read; no data means the socket dropped and says nothing about the job. And rows are
@@ -290,8 +352,13 @@ mutate the same list. None is optimistic — create and update both return the s
 table shows what the server stored rather than what the form guessed, and each returns a
 boolean because the dialog only closes on a write that actually happened.
 
-`components/dashboard/product-dialog.tsx` is the one editor, add and edit alike. Three things
-about it:
+`components/dashboard/product-dialog.tsx` is the one editor, add and edit alike. It is a
+right-side `Drawer` despite the filename — every detail surface in the app is one now — and
+`DrawerContent` pads only 6px, so its header, scrolling body and footer each carry their own
+`p-6`. The submit button sits in the footer *outside* the `<form>` and reaches it by
+`form="product-form"`, which is what lets the body scroll under a pinned footer. The delete
+confirm stays a `Popover`: vaul is Radix Dialog underneath, so it nests as a layer exactly as
+it did in the dialog. Three more things about it:
 
 - **It is mounted only while open and keyed `uuid ?? "new"`.** That remount is what resets the
   form, the fetched detail and an armed delete. Do not replace it with a reset effect —
@@ -344,13 +411,21 @@ splits: `app/dashboard/ledger/page.tsx` is a small **server** component that awa
 are not needed. `Number(...) || undefined` means a `?seq=` that is unparseable, or 0 (the chain
 starts at 1), falls through to the ordinary newest-first screen rather than erroring.
 
-Two things that link needs. `useAudit(domain, seq)` seeds `selected` with it, and the
-`rows[0]` fallback is skipped **only for that seq** (`selected === seq`): a decision can sit
-thousands of entries below the loaded pages, and quietly showing entry one instead would answer
-"what allowed this order?" with an unrelated entry. A row the *filter* excludes still falls
-back, as the inspector always has. The rail then draws from `entry ?? position`, which works
-because `LedgerEntryDetail` is a **superset** of `LedgerEntry` — the linked entry needs no
-paging to reach, just its own fetch, and the rail says it came from a link.
+**The entry opens in a right-side `Drawer`**, not the old 420px rail — the table gets the page
+and "nothing selected" became a real state. `useAudit` therefore has **no `rows[0]` fallback**
+at all: it would open the drawer on page load. `open` is derived from `shown` (`entry ??
+position`) rather than raw `selected`, so an entry that cannot be described closes the drawer
+instead of leaving an empty one standing. That also removed the `selected === seq` special
+case: a linked `?seq=` and a filter-excluded row are now the same situation — no row to find,
+so the detail fetch answers for both. `shown` works because `LedgerEntryDetail` is a
+**superset** of `LedgerEntry`, and the drawer says when it came from a link.
+
+**Verify and Export chain are page-header buttons.** The navy "Anyone can check this" card is
+gone — it existed to fill the right column, which the drawer freed. The public `GET
+/audit/verify` address and the chain-result pill moved under the page description; the card's
+"a break returns the sequence number…" sentence went with it, since the pill prints those exact
+words. Both buttons lost their navy overrides, which existed only because the card was dark.
+
 Four endpoints, served by the backend's `ledger` app under the `audit/` prefix (there is no
 app called `audit`, and the four URLs carry **no trailing slash**, unlike `core/` and
 `policy/`).
@@ -375,7 +450,7 @@ something here:
   what `callerOf()` in `parts.tsx` exists for: on a `checkout` a blank agent is the engine's
   "no valid mandate was presented", but on a `policy_change` or `razorpay_*` row it means the
   merchant did it from this dashboard, where "unsigned caller" would read as an intrusion. The
-  actor is in the `detail` blob (`actor_email`, `by_user`) and the inspector prints it there.
+  actor is in the `detail` blob (`actor_email`, `by_user`) and the drawer prints it there.
 - **`reason_description` is blank for most codes, by design.** `describe()` in the backend's
   `reasons.py` covers the gate's verdicts only and returns `""` for anything else *on
   purpose* — "entries are permanent and codes are not". Every row on a fresh install has an
@@ -591,9 +666,10 @@ is not a gate refusal.
 
 ## The buyer area
 
-Three routes under `/buyer`, for the *other* role: `/buyer` creates a mandate,
-`/buyer/mandates` lists and revokes them, and `/buyer/api-keys` mints and revokes the buyer's
-own platform keys. Pages are one-line pass-throughs; the screens live in `components/buyer/`.
+Four routes under `/buyer`, for the *other* role: `/buyer` creates a mandate,
+`/buyer/mandates` lists and revokes them, `/buyer/orders` is what those mandates bought, and
+`/buyer/api-keys` mints and revokes the buyer's own platform keys. Pages are one-line
+pass-throughs; the screens live in `components/buyer/`.
 
 `app/buyer/layout.tsx` is an auth **and role** guard — the same client-side `GET /core/login/`
 as the dashboard's (the `sessionid` cookie belongs to the API origin, so nothing on the server
@@ -604,8 +680,47 @@ yet — `user.merchant` is always `null` for a buyer, so there is nothing on it 
 
 `components/buyer-sidebar.tsx` is the rail: one flat `NAV`, one "Menu" group, no badge fetch
 and no `KillSwitch` (both are store concepts). `isActive` is an **exact** `pathname` match,
-which is correct only while no route nests under one of the three. Note this file uses **no
-semicolons**, unlike everything in `components/buyer/`.
+which is correct only while no route nests under one of the four — the orders screen keeps it
+correct by opening its detail in a drawer rather than at `/buyer/orders/[uuid]`. Note this file
+uses **no semicolons**, unlike everything in `components/buyer/`.
+
+`/buyer/orders` is `components/buyer/orders-screen.tsx` over `hooks/use-buyer-orders.ts`, and it
+is the merchant orders screen with most of it taken away. The envelope is the same
+`{results, next_cursor, has_more, total}`, so all four of that hook's traps carry over verbatim:
+`cursor`/`generation` refs, `.then` chains rather than `await`, `total` written through **only**
+when it is not null, and `LoadMore` gated on `has_more`. What differs is the size of the API:
+
+- **`all` is not a status here.** `?status=` takes `paid|pending|failed|expired` and nothing
+  else — no `all`, no `needs_attention` — so "every status" is the parameter being *absent*.
+  Sending `status: "all"` the way the merchant hook does filters this list to nothing.
+- **There is no counts, tiles or export endpoint for a buyer** — `sdk.gen.ts` has exactly six
+  `*Buyer*` functions and two are these. So the pills carry no numbers (a pill printing a count
+  this screen cannot source would be a count it invented), there is no `StatTile` row, and no
+  export button. It is also why the screen has **no dark panel**: §1 rule 5 allows one, but
+  there is no create action here and no figure worth the weight.
+- **`merchant_domain` takes the column the merchant screen gives `agent`.** This list spans
+  every store the buyer has bought from, so which shop is the fact that orients them; and
+  `agent_label`, `buyer_label` and `decision_seq` are not on `BuyerOrder` at all, so there is no
+  "see the decision behind it" link and no self-declared-agent disclaimer to print.
+- **Selection is real state and `null` closes the drawer.** No `rows[0]` fallback — a drawer
+  that opens itself on page load is wrong. This screen set the pattern the merchant's ledger and
+  orders screens then adopted wholesale. The `detail?.uuid === selected` guard is still what
+  replaces a clearing setState.
+
+**`getBuyerOrder` is called for exactly one field.** `BuyerOrderDetail` is a strict superset of
+the list row plus `payments`, so the drawer is fully readable the moment it opens and only the
+attempt history waits on the second call. That is also why there is no `/buyer/payments` route:
+nothing returns payments independently, so a flat list would mean one detail request per order.
+A payment's `short_url` is offered **only while its status is `pending`** — a link on an expired
+attempt invites a click that goes nowhere.
+
+`components/ui/drawer.tsx` is vaul-based (the one dependency this feature added) and is edited
+away from the registry default; the reasons are in a comment at `DrawerContent`, and re-running
+`shadcn add drawer` reverts them *and* breaks the file's `cn` import. It is now the detail
+surface on four screens — this one, the ledger, merchant orders and the product editor — so
+every `direction="right"` caller repeats the same two things: its own
+`data-[vaul-drawer-direction=right]:sm:max-w-*` (the base class hardcodes `sm:max-w-sm` at the
+same specificity) and its own `p-6`, since `DrawerContent` pads 6px.
 
 `/buyer/api-keys` is `components/buyer/api-keys-screen.tsx` — one file, not the mandates
 screen's form/list pair, because those split to serve two routes and this serves one. Its
@@ -687,6 +802,35 @@ shadcn's `muted` is a *surface*** (`text-muted-ink` vs `bg-muted`).
 Body text defaults to 14px/1.6, not 16px. `p` carries a 660px measure globally; override
 with `max-w-none` where a panel must fill.
 
+**Motion is DESIGN.md §10**, appended after §9 so the section numbers every comment in the
+repo cites stay put. It is enforced the same way the rest is — through the token layer, not
+through markup:
+
+- `app/munim-theme.css` sets Tailwind's own `--default-transition-duration` (180ms) and
+  `--default-transition-timing-function` (`ease-out-quart`). That is why the fifteen bare
+  `transition-colors` already scattered across the screens are on-system without one of them
+  being edited, and why `duration-*` / `ease-*` appear in markup in exactly two places.
+- Three keyframes, declared at the file's top level rather than inside `@theme` so they ship
+  whether or not Tailwind sees their utility in the scan: `row-in` (a row that was not on
+  screen a moment ago now is), `heartbeat` (the gate is armed — the kill switch's dot, and it
+  runs in **one** state so the stillness of the other is the report), `sweep` (indeterminate
+  progress, on the scan bar while discovery has no `total` to divide by).
+- `app/globals.css` ends with an **unlayered** `prefers-reduced-motion` block. Unlayered
+  deliberately: `!important` inside `@layer` loses to `!important` outside one, and this has
+  to beat the inline transitions vaul writes onto the drawer. It sets `animation-duration`
+  rather than `animation: none`, so a `both`-filled keyframe still lands on its final frame —
+  `none` would strand a `row-in` row at `opacity: 0`.
+- `animate-row-in` on the catalogue is keyed to **row identity** (a `useState` set of the
+  uuids present at first paint), never to the `scanning` flag. Adding an animation class to
+  already-mounted elements replays it on all of them, so the flag version flashes the entire
+  catalogue the moment a scan starts. There is no stagger and none is wanted: the SSE stream
+  is the rhythm.
+- `components/ui/sidebar.tsx` swapped `ease-linear` for `ease-out-quart` in all four places
+  it appears — a third edit to that file, alongside its `TooltipProvider` and the `floating`
+  panel's `shadow-card`. A 200ms linear width change stops dead at the end, and the rail
+  collapse is the one layout move a merchant triggers several times a day. Re-running
+  `shadcn add sidebar` reverts all three.
+
 Token *values* are imported verbatim from the Claude Design project `6b9dc3ec`
 (`munim-theme.css`). Read them from there — via the DesignSync tool after `/design-login` —
 rather than deriving them from DESIGN.md's prose, and don't nudge a hex toward the navy
@@ -695,7 +839,7 @@ reconciled rather than copied (`--muted`, `--destructive`, `--color-accent` → 
 and the `shadow-card` utility); DESIGN.md §9 lists them.
 
 The create-next-app template that used to sit in `app/page.tsx` is gone — that file is now
-a `redirect("/dashboard")` — so every rendered route is on-system.
+the landing page — so every rendered route is on-system.
 
 ## API client
 
@@ -759,6 +903,48 @@ DESIGN.md's no-red/green rule: `toast.error` red, `.warning` amber, `.success` g
 `.info` blue. It only paints typed toasts, so reach for a typed call rather than a bare
 `toast()` unless a message really has no verdict. A multi-request flow (register → login)
 reuses one `toast.loading` id so the stages update one toast instead of stacking.
+
+## The landing page
+
+`/` is the marketing page, ported from the design project's `Munim Landing.dc.html`. One
+client component, `components/landing.tsx`; `app/page.tsx` exists only to hold the
+`metadata` export a client component cannot have. Every figure on it is **copy, not data** —
+there is no public endpoint that returns a store's ledger, and a landing page that fetched
+one would be showing somebody else's. Every CTA goes to `/auth`, which carries its own
+login/register toggle and takes no URL param.
+
+- **One rAF-throttled scroll listener** drives all three scroll effects: the progress bar,
+  the topbar's narrowing past 60px, and which timeline step is active. The bar's width is
+  written straight to the node through a ref — routing it through state would re-render the
+  whole page on every scroll frame. `onScroll()` is called once at the end of the effect;
+  the setState lands inside the rAF callback, which is what keeps
+  `react-hooks/set-state-in-effect` quiet.
+- **`Reveal` is one IntersectionObserver per section** and only ever adds the visible state,
+  so nothing can be hidden again once read. Reduced motion collapses the transition globally
+  (globals.css), leaving the content exactly where it lands.
+- **No new keyframes.** The design file's `lnPulse`/`lnRow`/`lnFade` map onto the existing
+  `animate-heartbeat` and `animate-row-in` (DESIGN.md §10 — "there is no fourth"). Its
+  blinking console caret was dropped rather than earn a fourth: the pulsing "live" dot
+  already reports the same thing.
+- **The gate slider is a native `<input type="range">` with `accentColor`** set from the
+  verdict token, not the design's overlay-div track. One inline style colours the fill and
+  the thumb together and keeps the keyboard behaviour for free.
+- Two navy panels (hero and closing), where DESIGN.md §1 rule 5 allows one per screen. The
+  design file draws both and a landing page is not a dashboard screen; the rule stands for
+  everything under `/dashboard`.
+- **No theme toggle, and the navy panels stay navy.** An inverting hero (near-white in dark
+  mode) was tried and reverted on request — it read as wrong. The rest of the page is role
+  tokens and so still follows `.dark` if the visitor's OS asks for it; pin the page to light
+  if that ever needs to stop.
+- **Full-bleed, unlike the design file's 1180px column.** The only gutter is the 6px panel
+  gap; line length is held by the `max-w-*` on individual paragraphs, so widening the page
+  never widens a measure. The topbar's scroll narrowing became proportional
+  (`calc(100% - 4rem)`) for the same reason.
+- The hero is 44px (`text-display`), not the design's 54px — 54 is not on the §2 scale and
+  nothing else on the page needed a new size.
+- **Skipped from the design file:** the hero's parallax and scroll fade-out. Pure decoration,
+  the most code of anything on the page, and the jankiest. Add them to the same scroll
+  listener if the page ever feels static.
 
 ## Skills
 

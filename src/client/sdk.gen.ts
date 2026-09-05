@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteCoreApiKeysData, DeleteCoreApiKeysErrors, DeleteCoreLoginData, DeleteCoreLoginErrors, DeleteIngestProductsData, DeleteIngestProductsErrors, DeletePolicyPoliciesData, DeletePolicyPoliciesErrors, DeletePolicyPoliciesResponses, GetAuditEntriesData, GetAuditEntriesErrors, GetAuditEntriesResponses, GetAuditEntryData, GetAuditEntryErrors, GetAuditEntryResponses, GetAuditExportData, GetAuditExportErrors, GetAuditExportResponses, GetAuditVerifyData, GetAuditVerifyErrors, GetAuditVerifyResponses, GetBuyerMandateData, GetBuyerMandateErrors, GetBuyerMandateResponses, GetBuyerMandatesData, GetBuyerMandatesErrors, GetBuyerMandatesResponses, GetCoreApiKeysData, GetCoreApiKeysErrors, GetCoreApiKeysResponses, GetCoreDropdownData, GetCoreDropdownErrors, GetCoreDropdownResponses, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, GetCoreMerchantsCategoriesData, GetCoreMerchantsCategoriesErrors, GetCoreMerchantsCategoriesResponses, GetCoreMerchantsDropdownData, GetCoreMerchantsDropdownErrors, GetCoreMerchantsDropdownResponses, GetCoreRazorpayData, GetCoreRazorpayErrors, GetCoreRazorpayResponses, GetDashboardAgentsData, GetDashboardAgentsErrors, GetDashboardAgentsResponses, GetDashboardCatalogReadsData, GetDashboardCatalogReadsErrors, GetDashboardCatalogReadsResponses, GetDashboardData, GetDashboardErrors, GetDashboardPaymentsData, GetDashboardPaymentsErrors, GetDashboardPaymentsResponses, GetDashboardPolicyData, GetDashboardPolicyErrors, GetDashboardPolicyResponses, GetDashboardProductsData, GetDashboardProductsErrors, GetDashboardProductsResponses, GetDashboardProductsRowsData, GetDashboardProductsRowsErrors, GetDashboardProductsRowsResponses, GetDashboardResponses, GetDashboardRevenueData, GetDashboardRevenueErrors, GetDashboardRevenueResponses, GetIngestData, GetIngestErrors, GetIngestProductData, GetIngestProductErrors, GetIngestProductResponses, GetIngestProductsData, GetIngestProductsErrors, GetIngestProductsResponses, GetIngestResponses, GetIngestStreamData, GetIngestStreamErrors, GetIngestStreamResponses, GetOrderData, GetOrderErrors, GetOrderResponses, GetOrdersCountsData, GetOrdersCountsErrors, GetOrdersCountsResponses, GetOrdersData, GetOrdersErrors, GetOrdersExportData, GetOrdersExportErrors, GetOrdersExportResponses, GetOrdersResponses, GetOrdersTilesData, GetOrdersTilesErrors, GetOrdersTilesResponses, GetPolicyData, GetPolicyErrors, GetPolicyHistoryData, GetPolicyHistoryErrors, GetPolicyHistoryResponses, GetPolicyOverviewData, GetPolicyOverviewErrors, GetPolicyOverviewResponses, GetPolicyPoliciesData, GetPolicyPoliciesErrors, GetPolicyPoliciesResponses, GetPolicyResponses, GetPolicyRuleCatalogData, GetPolicyRuleCatalogErrors, GetPolicyRuleCatalogResponses, GetPolicyRuleData, GetPolicyRuleErrors, GetPolicyRuleResponses, GetPolicyStepUpData, GetPolicyStepUpErrors, GetPolicyStepUpResponses, GetWebhooksHitsData, GetWebhooksHitsErrors, GetWebhooksHitsResponses, PostBuyerMandatesData, PostBuyerMandatesErrors, PostBuyerMandatesResponses, PostBuyerMandatesRevokeData, PostBuyerMandatesRevokeErrors, PostBuyerMandatesRevokeResponses, PostCoreApiKeysData, PostCoreApiKeysErrors, PostCoreApiKeysResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRazorpayTestEventData, PostCoreRazorpayTestEventErrors, PostCoreRazorpayTestEventResponses, PostCoreRazorpayVerifyData, PostCoreRazorpayVerifyErrors, PostCoreRazorpayVerifyResponses, PostCoreRazorpayWebhookSecretData, PostCoreRazorpayWebhookSecretErrors, PostCoreRazorpayWebhookSecretResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostIngestData, PostIngestErrors, PostIngestProductsData, PostIngestProductsErrors, PostIngestProductsResponses, PostIngestResponses, PostPolicyPoliciesActivateData, PostPolicyPoliciesActivateErrors, PostPolicyPoliciesActivateResponses, PostPolicyPoliciesData, PostPolicyPoliciesDeactivateData, PostPolicyPoliciesDeactivateErrors, PostPolicyPoliciesDeactivateResponses, PostPolicyPoliciesErrors, PostPolicyPoliciesResponses, PostPolicyStepUpData, PostPolicyStepUpErrors, PostPolicyStepUpResponses, PostWebhooksRazorpay2Data, PostWebhooksRazorpay2Errors, PostWebhooksRazorpay2Responses, PostWebhooksRazorpayData, PostWebhooksRazorpayErrors, PostWebhooksRazorpayResponses, PutCoreRazorpayData, PutCoreRazorpayErrors, PutCoreRazorpayResponses, PutIngestProductsData, PutIngestProductsErrors, PutIngestProductsResponses, PutPolicyKillSwitchData, PutPolicyKillSwitchErrors, PutPolicyKillSwitchResponses, PutPolicyPoliciesData, PutPolicyPoliciesErrors, PutPolicyPoliciesResponses, PutPolicyPoliciesRulesData, PutPolicyPoliciesRulesErrors, PutPolicyPoliciesRulesResponses } from './types.gen';
+import type { DeleteCoreApiKeysData, DeleteCoreApiKeysErrors, DeleteCoreLoginData, DeleteCoreLoginErrors, DeleteIngestProductsData, DeleteIngestProductsErrors, DeletePolicyPoliciesData, DeletePolicyPoliciesErrors, DeletePolicyPoliciesResponses, GetAuditEntriesData, GetAuditEntriesErrors, GetAuditEntriesResponses, GetAuditEntryData, GetAuditEntryErrors, GetAuditEntryResponses, GetAuditExportData, GetAuditExportErrors, GetAuditExportResponses, GetAuditVerifyData, GetAuditVerifyErrors, GetAuditVerifyResponses, GetBuyerMandateData, GetBuyerMandateErrors, GetBuyerMandateResponses, GetBuyerMandatesData, GetBuyerMandatesErrors, GetBuyerMandatesResponses, GetBuyerOrderData, GetBuyerOrderErrors, GetBuyerOrderResponses, GetBuyerOrdersData, GetBuyerOrdersErrors, GetBuyerOrdersResponses, GetCoreApiKeysData, GetCoreApiKeysErrors, GetCoreApiKeysResponses, GetCoreDropdownData, GetCoreDropdownErrors, GetCoreDropdownResponses, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, GetCoreMerchantsCategoriesData, GetCoreMerchantsCategoriesErrors, GetCoreMerchantsCategoriesResponses, GetCoreMerchantsDropdownData, GetCoreMerchantsDropdownErrors, GetCoreMerchantsDropdownResponses, GetCoreRazorpayData, GetCoreRazorpayErrors, GetCoreRazorpayResponses, GetDashboardAgentsData, GetDashboardAgentsErrors, GetDashboardAgentsResponses, GetDashboardCatalogReadsData, GetDashboardCatalogReadsErrors, GetDashboardCatalogReadsResponses, GetDashboardData, GetDashboardErrors, GetDashboardPaymentsData, GetDashboardPaymentsErrors, GetDashboardPaymentsResponses, GetDashboardPolicyData, GetDashboardPolicyErrors, GetDashboardPolicyResponses, GetDashboardProductsData, GetDashboardProductsErrors, GetDashboardProductsResponses, GetDashboardProductsRowsData, GetDashboardProductsRowsErrors, GetDashboardProductsRowsResponses, GetDashboardResponses, GetDashboardRevenueData, GetDashboardRevenueErrors, GetDashboardRevenueResponses, GetIngestData, GetIngestErrors, GetIngestProductData, GetIngestProductErrors, GetIngestProductResponses, GetIngestProductsData, GetIngestProductsErrors, GetIngestProductsResponses, GetIngestResponses, GetIngestStreamData, GetIngestStreamErrors, GetIngestStreamResponses, GetOrderData, GetOrderErrors, GetOrderResponses, GetOrdersCountsData, GetOrdersCountsErrors, GetOrdersCountsResponses, GetOrdersData, GetOrdersErrors, GetOrdersExportData, GetOrdersExportErrors, GetOrdersExportResponses, GetOrdersResponses, GetOrdersTilesData, GetOrdersTilesErrors, GetOrdersTilesResponses, GetPaymentData, GetPaymentErrors, GetPaymentResponses, GetPaymentsData, GetPaymentsErrors, GetPaymentsResponses, GetPolicyData, GetPolicyErrors, GetPolicyHistoryData, GetPolicyHistoryErrors, GetPolicyHistoryResponses, GetPolicyOverviewData, GetPolicyOverviewErrors, GetPolicyOverviewResponses, GetPolicyPoliciesData, GetPolicyPoliciesErrors, GetPolicyPoliciesResponses, GetPolicyResponses, GetPolicyRuleCatalogData, GetPolicyRuleCatalogErrors, GetPolicyRuleCatalogResponses, GetPolicyRuleData, GetPolicyRuleErrors, GetPolicyRuleResponses, GetPolicyStepUpData, GetPolicyStepUpErrors, GetPolicyStepUpResponses, GetWebhooksHitsData, GetWebhooksHitsErrors, GetWebhooksHitsResponses, PostBuyerMandatesData, PostBuyerMandatesErrors, PostBuyerMandatesResponses, PostBuyerMandatesRevokeData, PostBuyerMandatesRevokeErrors, PostBuyerMandatesRevokeResponses, PostCoreApiKeysData, PostCoreApiKeysErrors, PostCoreApiKeysResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRazorpayTestEventData, PostCoreRazorpayTestEventErrors, PostCoreRazorpayTestEventResponses, PostCoreRazorpayVerifyData, PostCoreRazorpayVerifyErrors, PostCoreRazorpayVerifyResponses, PostCoreRazorpayWebhookSecretData, PostCoreRazorpayWebhookSecretErrors, PostCoreRazorpayWebhookSecretResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostIngestCancelData, PostIngestCancelErrors, PostIngestCancelResponses, PostIngestData, PostIngestErrors, PostIngestProductsData, PostIngestProductsErrors, PostIngestProductsResponses, PostIngestResponses, PostPolicyPoliciesActivateData, PostPolicyPoliciesActivateErrors, PostPolicyPoliciesActivateResponses, PostPolicyPoliciesData, PostPolicyPoliciesDeactivateData, PostPolicyPoliciesDeactivateErrors, PostPolicyPoliciesDeactivateResponses, PostPolicyPoliciesErrors, PostPolicyPoliciesResponses, PostPolicyStepUpData, PostPolicyStepUpErrors, PostPolicyStepUpResponses, PostWebhooksRazorpay2Data, PostWebhooksRazorpay2Errors, PostWebhooksRazorpay2Responses, PostWebhooksRazorpayData, PostWebhooksRazorpayErrors, PostWebhooksRazorpayResponses, PutCoreRazorpayData, PutCoreRazorpayErrors, PutCoreRazorpayResponses, PutIngestProductsData, PutIngestProductsErrors, PutIngestProductsResponses, PutPolicyKillSwitchData, PutPolicyKillSwitchErrors, PutPolicyKillSwitchResponses, PutPolicyPoliciesData, PutPolicyPoliciesErrors, PutPolicyPoliciesResponses, PutPolicyPoliciesRulesData, PutPolicyPoliciesRulesErrors, PutPolicyPoliciesRulesResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -131,6 +131,48 @@ export const postBuyerMandatesRevoke = <ThrowOnError extends boolean = false>(op
 });
 
 /**
+ * Every order this buyer has placed, newest first.
+ *
+ * Across all merchants, unlike the MCP tools, which are pinned to the store
+ * whose endpoint the agent is talking to. A logged-in buyer asking for their
+ * own orders is not scoped to one shop.
+ *
+ * Paginated by cursor and not by page number, for the reason OrderListAV
+ * states: the list grows at the head, so an order placed between two scrolls
+ * shifts every offset, and the reader sees one row twice and never sees
+ * another. The ordering KeysetPagination positions on -- (-authorized_at,
+ * -id) -- is this model's Meta ordering and is covered here by
+ * idx_order_buyer_authz, so the buyer's page costs the same index walk the
+ * merchant's does.
+ *
+ * `total` comes back only on a request that arrived without a cursor: that is
+ * the one that needs "Showing 20 of 147", and counting again on every scroll
+ * tick buys nothing.
+ */
+export const getBuyerOrders = <ThrowOnError extends boolean = false>(options?: Options<GetBuyerOrdersData, ThrowOnError>): RequestResult<GetBuyerOrdersResponses, GetBuyerOrdersErrors, ThrowOnError> => (options?.client ?? client).get<GetBuyerOrdersResponses, GetBuyerOrdersErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/buyer/orders/',
+    ...options
+});
+
+/**
+ * One order, with every payment attempt made against it.
+ */
+export const getBuyerOrder = <ThrowOnError extends boolean = false>(options: Options<GetBuyerOrderData, ThrowOnError>): RequestResult<GetBuyerOrderResponses, GetBuyerOrderErrors, ThrowOnError> => (options.client ?? client).get<GetBuyerOrderResponses, GetBuyerOrderErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/buyer/orders/{order_uuid}/',
+    ...options
+});
+
+/**
  * Issue, list, and revoke platform API keys for the calling user.
  *
  * Session-authenticated (BaseAV's default authentication = True): only a
@@ -245,7 +287,15 @@ export const postCoreLogin = <ThrowOnError extends boolean = false>(options: Opt
  * a 404, matching MasterDropdownAV: "not crawled yet" is a legitimate answer,
  * and only a UUID naming no store is a wrong request.
  */
-export const getCoreMerchantsCategories = <ThrowOnError extends boolean = false>(options: Options<GetCoreMerchantsCategoriesData, ThrowOnError>): RequestResult<GetCoreMerchantsCategoriesResponses, GetCoreMerchantsCategoriesErrors, ThrowOnError> => (options.client ?? client).get<GetCoreMerchantsCategoriesResponses, GetCoreMerchantsCategoriesErrors, ThrowOnError>({ url: '/core/merchants/{merchant_uuid}/categories/', ...options });
+export const getCoreMerchantsCategories = <ThrowOnError extends boolean = false>(options: Options<GetCoreMerchantsCategoriesData, ThrowOnError>): RequestResult<GetCoreMerchantsCategoriesResponses, GetCoreMerchantsCategoriesErrors, ThrowOnError> => (options.client ?? client).get<GetCoreMerchantsCategoriesResponses, GetCoreMerchantsCategoriesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/core/merchants/{merchant_uuid}/categories/',
+    ...options
+});
 
 /**
  * Every onboarded store, as a dropdown reads it: uuid, domain, name.
@@ -572,12 +622,25 @@ export const postIngest = <ThrowOnError extends boolean = false>(options: Option
 });
 
 /**
+ * Stop a running ingestion. The job settles on `cancelled`, its open SSE stream closes with a final `done` event, and the products already ingested stay in the catalogue. Safe to call twice, and safe to call on a job that has just finished -- `cancelled` in the response says whether this call is what stopped it.
+ */
+export const postIngestCancel = <ThrowOnError extends boolean = false>(options: Options<PostIngestCancelData, ThrowOnError>): RequestResult<PostIngestCancelResponses, PostIngestCancelErrors, ThrowOnError> => (options.client ?? client).post<PostIngestCancelResponses, PostIngestCancelErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/ingest/{job_uuid}/cancel',
+    ...options
+});
+
+/**
  * Server-Sent Events stream of live progress for one ingestion job, open until the job finishes. Requires `EventSource(url, {withCredentials: true})` so the session cookie is sent.
  *
  * Named events:
  * - `progress` -- `{job, status, processed, total, created, updated, skipped}`, sent immediately on connect and again whenever a counter changes.
  * - `product` -- `{uuid, sku, title, price_paise, currency, image_url}`, sent whenever a product is newly ingested. Same shape as a row of `results` from `GET /ingest/products`, so a client renders either without telling them apart; `uuid` addresses the row for `GET /ingest/products/<uuid>` and its edit/delete.
- * - `done` -- final `progress`-shaped payload, sent once and the stream closes.
+ * - `done` -- final `progress`-shaped payload, sent once and the stream closes. Its `status` is `succeeded`, or `cancelled` if the merchant stopped the run via `POST /ingest/<job>/cancel`.
  * - `error` -- `{message}`, sent once (job failed) and the stream closes.
  */
 export const getIngestStream = <ThrowOnError extends boolean = false>(options: Options<GetIngestStreamData, ThrowOnError>): RequestResult<GetIngestStreamResponses, GetIngestStreamErrors, ThrowOnError> => (options.client ?? client).get<GetIngestStreamResponses, GetIngestStreamErrors, ThrowOnError>({
@@ -767,6 +830,50 @@ export const getOrdersTiles = <ThrowOnError extends boolean = false>(options?: O
             type: 'apiKey'
         }],
     url: '/orders/tiles',
+    ...options
+});
+
+/**
+ * Every payment link this store has minted, newest first.
+ *
+ * Across orders, and one row per ATTEMPT -- which is the difference from
+ * /orders/, where three tries collapse into one row showing whichever attempt
+ * reproject() promoted.
+ *
+ * Paginated by cursor rather than page number for the reason OrderListAV
+ * states: the list grows at the head, so a retry minted between two scrolls
+ * shifts every offset and the reader sees one row twice and never sees
+ * another. The (-requested_at, -id) walk is covered by
+ * idx_payment_tenant_req_id.
+ *
+ * `total` comes back only on a request that arrived without a cursor -- that
+ * is the one that needs "Showing 20 of 147", and counting again on every
+ * scroll tick buys nothing.
+ */
+export const getPayments = <ThrowOnError extends boolean = false>(options?: Options<GetPaymentsData, ThrowOnError>): RequestResult<GetPaymentsResponses, GetPaymentsErrors, ThrowOnError> => (options?.client ?? client).get<GetPaymentsResponses, GetPaymentsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/payments/',
+    ...options
+});
+
+/**
+ * One attempt, with a link to the decision that authorised it.
+ *
+ * Addressed by uuid rather than (order_number, attempt): order numbers are
+ * per-tenant and sequential, so that pair is enumerable, and a 404-on-someone-
+ * else's-row is worth less when the address itself can be guessed.
+ */
+export const getPayment = <ThrowOnError extends boolean = false>(options: Options<GetPaymentData, ThrowOnError>): RequestResult<GetPaymentResponses, GetPaymentErrors, ThrowOnError> => (options.client ?? client).get<GetPaymentResponses, GetPaymentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/payments/{payment_uuid}',
     ...options
 });
 

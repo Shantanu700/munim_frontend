@@ -161,9 +161,11 @@ export function useOrders() {
     setBusy(false);
   }, [load, status, query]);
 
-  // The row under inspection. Derived, never stored: the selected order may be one the
-  // current filter excludes, and then the first row still showing is what the rail describes.
-  const order = rows.find((row) => row.uuid === selected) ?? rows[0];
+  // The open row. Derived, never stored, and with no fallback: nothing selected means the
+  // drawer is shut, so picking a row for the merchant would open it on page load. An order the
+  // current filter excludes stops being found, which closes the drawer rather than silently
+  // swapping in a different order under the same heading.
+  const order = rows.find((row) => row.uuid === selected);
 
   /**
    * The rest of the order. `product_url`, the failure sentence and the link to the decision

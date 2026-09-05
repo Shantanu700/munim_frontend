@@ -16,16 +16,23 @@ import {
   StatTile,
 } from "@/components/dashboard/parts";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useOrders, type OrderStatus } from "@/hooks/use-orders";
 import { cn } from "@/lib/utils";
-import type { AverageOrderValue, OrderRow } from "@/src/client";
+import type { AverageOrderValue, OrderDetail, OrderRow } from "@/src/client";
 
 /**
  * The table reflows on its own panel's width, not the viewport's — a container query, for
- * the same reason the catalogue uses one: this panel is far wider at xl, where the page is
- * pinned and the detail rail sits beside it, than at lg. 42.5rem is the width the five
- * columns need; under it each order stacks into a card rather than scrolling sideways and
- * putting the amount off-screen.
+ * the same reason the catalogue uses one: the panel spans the page at xl but sits inside the
+ * sidebar's remainder at lg, and a viewport breakpoint is wrong at one of the two. 42.5rem is
+ * the width the five columns need; under it each order stacks into a card rather than
+ * scrolling sideways and putting the amount off-screen.
  *
  * One DOM serves both. Rows are `flex-wrap` when narrow and become the grid above the
  * threshold, with `@[42.5rem]:order-*` restoring the column order. DOM order is the card
@@ -194,172 +201,187 @@ export default function OrdersPage() {
         />
       </div>
 
-      <div className="grid gap-panel xl:min-h-0 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Panel className="flex flex-col xl:min-h-0">
-          {/* Below xl the page scrolls as a whole, so without a cap a long list pushes the
-              detail rail two screens down. The cap gives the list its own scroller here
-              too, the way the pinned xl layout already does — where flex-1 supplies the
-              height instead and the cap has to get out of the way. Either way there is
-              always a real scroller, which is what the sentinel below needs. */}
-          <div className="@container max-h-120 overflow-auto xl:max-h-none xl:min-h-0 xl:flex-1">
-            <div className="grid gap-panel @[42.5rem]:min-w-170">
-              {/* px-4 matches RowButton's own padding, so the labels sit over the cells
-                  they name. */}
-              <div
+      <Panel className="flex flex-col xl:min-h-0">
+        {/* Below xl the page scrolls as a whole, so without a cap a long list pushes the
+            tiles above two screens up. The cap gives the list its own scroller here too,
+            the way the pinned xl layout already does — where flex-1 supplies the height
+            instead and the cap has to get out of the way. Either way there is always a
+            real scroller, which is what the sentinel below needs. */}
+        <div className="@container max-h-120 overflow-auto xl:max-h-none xl:min-h-0 xl:flex-1">
+          <div className="grid gap-panel @[42.5rem]:min-w-170">
+            {/* px-4 matches RowButton's own padding, so the labels sit over the cells
+                they name. */}
+            <div
+              className={cn(
+                "sticky top-0 z-10 hidden bg-panel px-4 pb-2.5 text-table-head uppercase text-muted-ink",
+                COLUMNS
+              )}
+            >
+              <div>order</div>
+              <div>product</div>
+              <div className="text-right">amount</div>
+              <div>agent</div>
+              <div>status</div>
+            </div>
+
+            {rows.map((row) => (
+              <RowButton
+                key={row.uuid}
+                aria-pressed={order?.uuid === row.uuid}
+                onClick={() => select(row.uuid)}
                 className={cn(
-                  "sticky top-0 z-10 hidden bg-panel px-4 pb-2.5 text-table-head uppercase text-muted-ink",
-                  COLUMNS
+                  "flex flex-wrap items-center gap-x-2.5 gap-y-2 transition-colors",
+                  COLUMNS,
+                  order?.uuid === row.uuid ? "bg-track" : "hover:bg-track/60"
                 )}
               >
-                <div>order</div>
-                <div>product</div>
-                <div className="text-right">amount</div>
-                <div>agent</div>
-                <div>status</div>
-              </div>
+                <span className="shrink-0">
+                  <span className="block text-dense font-medium">{label(row)}</span>
+                  {/* The wire carries ISO-8601; the reader's timezone is only known here. */}
+                  <span className="mt-0.5 block text-meta text-muted-ink">
+                    {moment(row.authorized_at)}
+                  </span>
+                </span>
+                <span className="min-w-0 flex-1 @[42.5rem]:flex-none">
+                  <span className="block truncate text-dense">{row.title}</span>
+                  <span className="mt-0.5 block text-meta text-muted-ink">{row.sku}</span>
+                </span>
+                <span className="font-medium tabular-nums @[42.5rem]:text-right">
+                  {rupees(row.amount_paise, row.currency)}
+                </span>
+                {/* Before the agent when stacked — the status is what a merchant is
+                    scanning the list for. `order-*` puts it back last in the table. */}
+                <span className="@[42.5rem]:order-5">
+                  <OrderStatusPill status={row.status} />
+                </span>
+                <span className="truncate text-meta text-muted-ink @[42.5rem]:order-4">
+                  {row.agent_label || "not stated"}
+                </span>
+              </RowButton>
+            ))}
 
-              {rows.map((row) => (
-                <RowButton
-                  key={row.uuid}
-                  aria-pressed={order?.uuid === row.uuid}
-                  onClick={() => select(row.uuid)}
-                  className={cn(
-                    "flex flex-wrap items-center gap-x-2.5 gap-y-2 transition-colors",
-                    COLUMNS,
-                    order?.uuid === row.uuid ? "bg-track" : "hover:bg-track/60"
-                  )}
-                >
-                  <span className="shrink-0">
-                    <span className="block text-dense font-medium">{label(row)}</span>
-                    {/* The wire carries ISO-8601; the reader's timezone is only known here. */}
-                    <span className="mt-0.5 block text-meta text-muted-ink">
-                      {moment(row.authorized_at)}
-                    </span>
-                  </span>
-                  <span className="min-w-0 flex-1 @[42.5rem]:flex-none">
-                    <span className="block truncate text-dense">{row.title}</span>
-                    <span className="mt-0.5 block text-meta text-muted-ink">{row.sku}</span>
-                  </span>
-                  <span className="font-medium tabular-nums @[42.5rem]:text-right">
-                    {rupees(row.amount_paise, row.currency)}
-                  </span>
-                  {/* Before the agent when stacked — the status is what a merchant is
-                      scanning the list for. `order-*` puts it back last in the table. */}
-                  <span className="@[42.5rem]:order-5">
-                    <OrderStatusPill status={row.status} />
-                  </span>
-                  <span className="truncate text-meta text-muted-ink @[42.5rem]:order-4">
-                    {row.agent_label || "not stated"}
-                  </span>
-                </RowButton>
-              ))}
+            {/* Nothing at all while loading: a spinner on first paint only flashes. The two
+                empty sentences are different because the states are. */}
+            {loading || rows.length ? null : (
+              <p className="max-w-none py-8 text-center text-body text-muted-ink">
+                {filtered
+                  ? "No orders match that filter."
+                  : "No agent has bought anything yet. The first order lands here on its own."}
+              </p>
+            )}
 
-              {/* Nothing at all while loading: a spinner on first paint only flashes. The two
-                  empty sentences are different because the states are. */}
-              {loading || rows.length ? null : (
-                <p className="max-w-none py-8 text-center text-body text-muted-ink">
-                  {filtered
-                    ? "No orders match that filter."
-                    : "No agent has bought anything yet. The first order lands here on its own."}
-                </p>
-              )}
-
-              {/* Inside the scroller, so it sits at the foot of the list rather than
-                  pinned under a card nobody has scrolled to the end of. */}
-              {hasMore ? <LoadMore busy={busy} onLoadMore={loadMore} /> : null}
-            </div>
+            {/* Inside the scroller, so it sits at the foot of the list rather than
+                pinned under a card nobody has scrolled to the end of. */}
+            {hasMore ? <LoadMore busy={busy} onLoadMore={loadMore} /> : null}
           </div>
-        </Panel>
-
-        <div className="flex flex-col gap-panel xl:min-h-0 xl:overflow-y-auto">
-          {order ? (
-            <Panel className="grow">
-              <div className="flex items-center justify-between gap-3">
-                <OrderStatusPill status={order.status} />
-                <span className="text-eyebrow uppercase text-muted-ink">{label(order)}</span>
-              </div>
-              <h2 className="mt-4 text-card-title">{order.title}</h2>
-              <p className="mt-1 text-meta text-muted-ink">{order.sku}</p>
-
-              <div className="mt-4 grid gap-panel">
-                {facts(order, full).map(([name, value]) => (
-                  <Row key={name} className="flex items-center justify-between gap-3 py-3">
-                    <span className="shrink-0 text-dense text-muted-ink">{name}</span>
-                    <span className="text-right text-dense font-medium">{value}</span>
-                  </Row>
-                ))}
-              </div>
-
-              {/* The type's own docstring insists on this: `agent_label` is read from
-                  User-Agent and Origin at checkout, both trivially spoofable. It is
-                  attribution for a dashboard, never an authenticated identity. */}
-              <p className="mt-2.5 max-w-none text-meta text-muted-ink">
-                Agents name themselves. Munim records the claim; it cannot check it.
-              </p>
-
-              {/* Both sentences are blank in the ordinary case — an order exists only on an
-                  ALLOW — and an empty element would still take its margin. */}
-              {full?.failure_reason_description ? (
-                <Row className="mt-4">
-                  <div className="text-meta font-medium tracking-[0.03em]">
-                    {full.failure_reason_code}
-                  </div>
-                  <p className="mt-0.5 max-w-none text-meta text-muted-ink">
-                    {full.failure_reason_description}
-                  </p>
-                </Row>
-              ) : null}
-              {full?.step_up_reason_description ? (
-                <Row className="mt-2.5">
-                  <div className="text-meta font-medium tracking-[0.03em]">
-                    {full.step_up_reason_code}
-                  </div>
-                  <p className="mt-0.5 max-w-none text-meta text-muted-ink">
-                    A human was asked first. {full.step_up_reason_description}
-                  </p>
-                </Row>
-              ) : null}
-
-              {/* A link, which the list row could not hold: `RowButton` is a real button and
-                  may contain no other interactive element. */}
-              {full?.product_url ? (
-                <a
-                  href={full.product_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 flex items-center gap-1.5 text-meta font-medium text-accent-ink"
-                >
-                  View it on your storefront <ArrowUpRightIcon className="size-3.5" />
-                </a>
-              ) : null}
-
-              {/* Every order came from a gate decision, and that decision is the entry nobody
-                  can rewrite. `decision_seq` addresses it; `decision_url` is an API path, not
-                  a route on this dashboard. */}
-              {order.decision_seq === null ? null : (
-                <Button asChild variant="outline" className="mt-4 h-11 w-full">
-                  <Link href={`/dashboard/ledger?seq=${order.decision_seq}`}>
-                    See decision {order.decision_seq}
-                    <ArrowRightIcon />
-                  </Link>
-                </Button>
-              )}
-            </Panel>
-          ) : (
-            <Panel className="shrink-0">
-              <p className="max-w-none text-body text-muted-ink">
-                Pick an order to see its buyer, its agent and where the money got to.
-              </p>
-            </Panel>
-          )}
         </div>
+      </Panel>
+
+      {/* `select(null)` is what closes it, so the open order and the drawer cannot disagree.
+          `open` is derived from the row rather than the raw selection: an order the filter
+          now excludes closes the drawer instead of leaving an empty one standing. */}
+      <Drawer
+        direction="right"
+        open={order !== undefined}
+        onOpenChange={(open) => !open && select(null)}
+      >
+        <DrawerContent className="data-[vaul-drawer-direction=right]:sm:max-w-xl">
+          {order ? <OrderDrawer order={order} full={full} /> : null}
+        </DrawerContent>
+      </Drawer>
+    </div>
+  );
+}
+
+/**
+ * One order, in the drawer. `full` is `GET /orders/{uuid}` — `product_url`, the quantity and
+ * both reason sentences are on no list row — and is null until it lands, so every field it
+ * carries is optional here rather than blocking the drawer from opening.
+ */
+function OrderDrawer({ order, full }: { order: OrderRow; full: OrderDetail | null }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <DrawerHeader className="gap-0 p-6 pb-0">
+        {/* `pr-10` clears the drawer's own close button, which floats at `top-6 right-6`. */}
+        <div className="flex items-center justify-between gap-3 pr-10">
+          <OrderStatusPill status={order.status} />
+          <span className="text-eyebrow uppercase text-muted-ink">{label(order)}</span>
+        </div>
+        <DrawerTitle className="mt-4 text-card-title">{order.title}</DrawerTitle>
+        <DrawerDescription className="mt-1 text-meta text-muted-ink">{order.sku}</DrawerDescription>
+      </DrawerHeader>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-6">
+        <div className="grid gap-panel">
+          {facts(order, full).map(([name, value]) => (
+            <Row key={name} className="flex items-center justify-between gap-3 py-3">
+              <span className="shrink-0 text-dense text-muted-ink">{name}</span>
+              <span className="text-right text-dense font-medium">{value}</span>
+            </Row>
+          ))}
+        </div>
+
+        {/* The type's own docstring insists on this: `agent_label` is read from
+            User-Agent and Origin at checkout, both trivially spoofable. It is
+            attribution for a dashboard, never an authenticated identity. */}
+        <p className="mt-2.5 max-w-none text-meta text-muted-ink">
+          Agents name themselves. Munim records the claim; it cannot check it.
+        </p>
+
+        {/* Both sentences are blank in the ordinary case — an order exists only on an
+            ALLOW — and an empty element would still take its margin. */}
+        {full?.failure_reason_description ? (
+          <Row className="mt-4">
+            <div className="text-meta font-medium tracking-[0.03em]">
+              {full.failure_reason_code}
+            </div>
+            <p className="mt-0.5 max-w-none text-meta text-muted-ink">
+              {full.failure_reason_description}
+            </p>
+          </Row>
+        ) : null}
+        {full?.step_up_reason_description ? (
+          <Row className="mt-2.5">
+            <div className="text-meta font-medium tracking-[0.03em]">
+              {full.step_up_reason_code}
+            </div>
+            <p className="mt-0.5 max-w-none text-meta text-muted-ink">
+              A human was asked first. {full.step_up_reason_description}
+            </p>
+          </Row>
+        ) : null}
+
+        {/* A link, which the list row could not hold: `RowButton` is a real button and
+            may contain no other interactive element. */}
+        {full?.product_url ? (
+          <a
+            href={full.product_url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-4 flex items-center gap-1.5 text-meta font-medium text-accent-ink"
+          >
+            View it on your storefront <ArrowUpRightIcon className="size-3.5" />
+          </a>
+        ) : null}
+
+        {/* Every order came from a gate decision, and that decision is the entry nobody
+            can rewrite. `decision_seq` addresses it; `decision_url` is an API path, not
+            a route on this dashboard. */}
+        {order.decision_seq === null ? null : (
+          <Button asChild variant="outline" className="mt-4 h-11 w-full">
+            <Link href={`/dashboard/ledger?seq=${order.decision_seq}`}>
+              See decision {order.decision_seq}
+              <ArrowRightIcon />
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 
 /**
- * The rail's label/value rows. Built rather than listed because most of them are optional:
+ * The drawer's label/value rows. Built rather than listed because most of them are optional:
  * an order that has not been paid has no `paid_at`, one placed outside Razorpay no
  * `reference_id`, and a row printed as "—" reads as a fact that is missing rather than one
  * that does not apply yet.

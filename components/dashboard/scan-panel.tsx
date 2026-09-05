@@ -17,11 +17,13 @@ export function ScanPanel({
   progress,
   status,
   onScan,
+  onCancel,
 }: {
   domain: string;
   progress: IngestProgress | null;
   status: IngestStatus;
   onScan: (body: IngestRequest) => void;
+  onCancel: () => void;
 }) {
   const scanning = status === "running";
 
@@ -46,7 +48,7 @@ export function ScanPanel({
             type="url"
             required
             defaultValue={domain ? `https://${domain}` : ""}
-            placeholder="https://shoprabistha.com"
+            placeholder="https://yourstore.com"
             className="h-11 min-w-0 rounded-full bg-panel-2 px-5 text-body outline-none focus-visible:ring-3 focus-visible:ring-ring/30"
           />
         </label>
@@ -76,9 +78,18 @@ export function ScanPanel({
         <Button type="submit" disabled={scanning} className="h-11 px-5">
           {scanning ? "Reading…" : "Make agent-readable"}
         </Button>
+
+        {/* Only while a run is in flight — a Stop that is dead most of the time reads as a
+            control that is broken. Products already read are kept, so this is not destructive
+            and needs no confirm. */}
+        {scanning ? (
+          <Button type="button" variant="outline" onClick={onCancel} className="h-11 px-5">
+            Stop
+          </Button>
+        ) : null}
       </form>
 
-      {progress ? <Progress progress={progress} scanning={scanning} /> : null}
+      {progress ? <Progress progress={progress} status={status} /> : null}
     </div>
   );
 }
@@ -87,39 +98,63 @@ export function ScanPanel({
  * Live counters, moved by the job's own `progress` events — one per page read, plus one
  * the moment discovery lands `total`.
  *
- * `total` is 0 for the short window before that, so the bar shows a stub rather than a
- * fake 0%. The stub and the floor below it are the same 2% so the bar only ever grows:
- * a wider stub would animate *backwards* on the first real reading, which reads as a
- * glitch rather than as progress.
+ * `total` is 0 for the window before that, and that window can be long — discovery walks
+ * robots.txt and a sitemap before it can say how many pages there are. A bar parked at a
+ * 2% stub for thirty seconds reads as a stall, so the unknown-length case gets the one
+ * honest shape for it: an indeterminate sweep, which claims a size for nothing. The
+ * determinate bar takes over the moment `total` lands, and its floor is 2% so it only
+ * ever grows.
+ *
+ * A run that ends early — the merchant pressed Stop, or the socket dropped — keeps the
+ * counters and loses the bar. A track parked at 30% is a claim that the remaining 70% is
+ * still coming, which after a cancel is the one thing that will never happen; and "Discovering
+ * pages…" over an empty track is the same lie in the case where `total` never landed at all.
+ * The counters are still facts, so they stay.
  */
-function Progress({ progress, scanning }: { progress: IngestProgress; scanning: boolean }) {
+function Progress({ progress, status }: { progress: IngestProgress; status: IngestStatus }) {
   const { processed, total, created, updated, skipped } = progress;
+  const scanning = status === "running";
   const pct = total > 0 ? Math.round((processed / total) * 100) : 0;
-  const width = total > 0 ? `${Math.max(pct, 2)}%` : scanning ? "2%" : "0%";
+  const discovering = total === 0 && scanning;
 
   return (
     <div className="mt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <span className="text-meta font-medium">
-          {total > 0 ? `${processed} of ${total} pages read` : "Discovering pages…"}
+          {scanning
+            ? total > 0
+              ? `${processed} of ${total} pages read`
+              : "Discovering pages…"
+            : `${status === "cancelled" ? "Stopped. " : ""}${processed} pages read`}
         </span>
         <span className="text-meta text-muted-ink tabular-nums">
           {created} new · {updated} updated · {skipped} skipped
         </span>
       </div>
-      <div
-        className="mt-2 h-1.5 overflow-hidden rounded-full bg-track"
-        role="progressbar"
-        aria-valuenow={total > 0 ? pct : undefined}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-label="Scan progress"
-      >
+      {scanning || status === "succeeded" ? (
         <div
-          className="h-full rounded-full bg-bar-1 transition-[width] duration-500 ease-out"
-          style={{ width }}
-        />
-      </div>
+          className="mt-2 h-1.5 overflow-hidden rounded-full bg-track"
+          role="progressbar"
+          aria-valuenow={total > 0 ? pct : undefined}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="Scan progress"
+        >
+          {discovering ? (
+            // A quarter-width segment crossing the track: the only claim it makes is that
+            // work is happening, which is the only claim there is anything to back up yet.
+            // `motion-reduce:hidden` rather than a frozen segment — a still bar sitting at
+            // 25% would be a number nobody measured. The line above still says "Discovering
+            // pages…", so the state is reported either way.
+            <div className="h-full w-1/4 animate-sweep rounded-full bg-bar-1 motion-reduce:hidden" />
+          ) : (
+            <div
+              className="h-full rounded-full bg-bar-1 transition-[width] duration-500 ease-out"
+              style={{ width: total > 0 ? `${Math.max(pct, 2)}%` : "0%" }}
+            />
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

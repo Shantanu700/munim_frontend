@@ -44,7 +44,16 @@ export function RowButton({ className, ...props }: React.ComponentProps<"button"
   return (
     <button
       type="button"
-      className={cn(ROW, "w-full text-left focus-visible:ring-3 focus-visible:ring-ring/30", className)}
+      // `transition-colors` here rather than at each call site: every one of them already
+      // passes a `hover:bg-*`, and a clickable row that changes colour instantly is the
+      // one place in the app where a real affordance reads as a repaint glitch. No
+      // default `hover:` colour, deliberately — a base one would survive tailwind-merge
+      // alongside a caller's `bg-track` and repaint the *selected* row on hover.
+      className={cn(
+        ROW,
+        "w-full text-left transition-colors focus-visible:ring-3 focus-visible:ring-ring/30",
+        className
+      )}
       {...props}
     />
   );
@@ -161,7 +170,35 @@ const ORDER_STATUS: Record<string, { label: string; className: string }> = {
  * holds either way — the word is what does the telling.
  */
 export function OrderStatusPill({ status }: { status?: string }) {
-  const { label, className } = (status ? ORDER_STATUS[status] : undefined) ?? {
+  return <StatusPill map={ORDER_STATUS} status={status} />;
+}
+
+/**
+ * The same four words on the wire as an order's status, the same tints, and deliberately not
+ * the same sentences. An order that reads `pending` is waiting on a human to approve it; a
+ * payment link that reads `pending` has simply not been paid yet, so `OrderStatusPill` here
+ * would print "Awaiting approval" over a link nobody has opened. `expired` earns its own line
+ * too: the order did not expire, the link to pay for it did.
+ */
+const PAYMENT_STATUS: Record<string, { label: string; className: string }> = {
+  paid: { label: "Paid", className: "bg-allow-tint text-allow" },
+  pending: { label: "Unpaid", className: "bg-step-tint text-step" },
+  failed: { label: "Failed", className: "bg-deny-tint text-deny" },
+  expired: { label: "Link expired", className: "bg-deny-tint text-deny" },
+};
+
+export function PaymentStatusPill({ status }: { status?: string }) {
+  return <StatusPill map={PAYMENT_STATUS} status={status} />;
+}
+
+function StatusPill({
+  map,
+  status,
+}: {
+  map: Record<string, { label: string; className: string }>;
+  status?: string;
+}) {
+  const { label, className } = (status ? map[status] : undefined) ?? {
     label: status || "Unknown",
     className: "bg-faint text-muted-ink",
   };

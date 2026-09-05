@@ -20,7 +20,15 @@ export function CreateMandateScreen() {
           time.
         </p>
       </div>
-      <MandateForm busy={busy} create={create} />
+      {/* The form takes the width and the read-back is the fixed rail — the two-column shape
+          every other screen in this app uses (api-keys, ledger, products, razorpay). Alone in
+          one column the form stretched pill inputs across 1300px at xl, which made a
+          seven-field money form read as a landing page. `items-start` so the shorter rail
+          sizes to its content instead of stretching to the form's height; below `lg` the form
+          comes first, which is the order it is filled in. */}
+      <div className="grid items-start gap-panel lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_420px]">
+        <MandateForm busy={busy} create={create} />
+      </div>
     </div>
   );
 }

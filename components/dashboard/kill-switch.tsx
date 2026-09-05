@@ -71,10 +71,15 @@ export function KillSwitch({
       ) : (
         <div className="rounded-lg bg-navy-900 p-4.5 text-navy-050">
           <div className="flex items-center gap-2.5">
+            {/* The pulse belongs to one state, not both. A live gate has traffic passing
+                through it, so it breathes; a stopped one is still, and the stillness is
+                the report. Pulsing in both states is the version this replaces — motion
+                that said nothing, on the one card where saying nothing is worst. Slow and
+                shallow by design (see the keyframe): an open store is not an alarm. */}
             <span
               className={cn(
-                "size-2 shrink-0 animate-pulse rounded-full",
-                agentsOn ? "bg-navy-200" : "bg-step"
+                "size-2 shrink-0 rounded-full transition-colors",
+                agentsOn ? "animate-heartbeat bg-navy-200" : "bg-step"
               )}
             />
             <span className="text-eyebrow uppercase text-navy-200">

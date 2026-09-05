@@ -166,9 +166,73 @@
 
   /* the panel gap is 6px and is not negotiable (DESIGN.md §4) */
   --spacing-panel: 6px;
+
+  /* motion (DESIGN.md §10). Two curves, three durations, nothing between.
+   *
+   * Overriding Tailwind's two `--default-transition-*` keys is what makes this a
+   * system rather than a set of one-off classes: every bare `transition-colors`
+   * already written across the screens picks up the brand curve and duration with
+   * no edit at the call site. Write `duration-*` / `ease-*` only where a control
+   * needs to differ from the 180ms default. */
+  --default-transition-duration: 180ms;
+  --default-transition-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* The three named motions. Each one reports a state that is otherwise invisible;
+   * none of them is decoration, and there is no fourth. */
+  --animate-row-in: row-in 260ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  --animate-heartbeat: heartbeat 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-sweep: sweep 1.4s cubic-bezier(0.65, 0, 0.35, 1) infinite;
 }
 
-/* The only shadow. Declared as a utility rather than a @theme key so the role
+/* ── 5. Keyframes ─────────────────────────────────────────────────────────────
+ * Declared at the top level rather than inside `@theme` so they are emitted
+ * unconditionally — a keyframe that only ships when Tailwind sees its utility in
+ * the scan is a silent failure the day a class is composed rather than written.
+ *
+ * `row-in` fills `both`, so a row is never painted at full opacity for the frame
+ * before its animation starts. Under `prefers-reduced-motion` (globals.css) the
+ * duration collapses to ~0 and `both` leaves the row at its final, visible state,
+ * which is why the reveal cannot hide content from anyone. */
+@keyframes row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The gate is armed and watching. Deliberately slow and shallow — a pulse fast or
+ * deep enough to read as an alarm would dramatize a store that is simply open. */
+@keyframes heartbeat {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}
+
+/* Indeterminate progress: work is happening and its size is not known yet. The
+ * segment is a quarter of the track, so -100%..400% carries it just off one edge
+ * to just off the other. */
+@keyframes sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+/* ── 6. The only shadow. Declared as a utility rather than a @theme key so the role
  * token keeps its DESIGN.md name without a circular self-reference.
  * ponytail: `card` exists in both the shadow and colour namespaces, so Tailwind
  * also emits an inert `--tw-shadow-color: var(--card)` on this class. The

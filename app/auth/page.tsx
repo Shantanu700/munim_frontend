@@ -68,8 +68,8 @@ const COPY = {
     ],
     toggleHint: "Sell to AI agents",
     nameLabel: "Store name",
-    namePlaceholder: "Shop Rabistha",
-    emailPlaceholder: "you@shoprabistha.com",
+    namePlaceholder: "Your store name",
+    emailPlaceholder: "you@yourstore.com",
     registerSub:
       "Two steps after this: make your store agent-readable, then connect your Razorpay payout account.",
     registerNote:
@@ -90,7 +90,7 @@ const COPY = {
     ],
     toggleHint: "Buy through an agent",
     nameLabel: "Full name",
-    namePlaceholder: "Rabistha Sen",
+    namePlaceholder: "Your full name",
     emailPlaceholder: "you@email.com",
     registerSub: "One account works across every assistant you connect it to.",
     registerNote:
@@ -301,7 +301,7 @@ export default function AuthPage() {
             <span className="flex size-[34px] items-center justify-center rounded-md bg-navy-200 text-card-title text-navy-900">
               म
             </span>
-            <span className="text-section">munim</span>
+            <span className="text-section font-semibold tracking-tight">munim</span>
           </div>
 
           <div className="mt-11 inline-flex items-center gap-2 self-start rounded-pill bg-navy-200/12 px-4 py-2">

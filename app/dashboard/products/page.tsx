@@ -50,7 +50,7 @@ const COLUMNS =
  * shell scrolls normally.
  */
 export default function ProductsPage() {
-  const { products, remaining, progress, status, busy, merchant, start, loadMore, create, update, remove } =
+  const { products, remaining, progress, status, busy, merchant, start, cancel, loadMore, create, update, remove } =
     useIngest();
   // `undefined` closed, `null` adding, a uuid editing that row. One dialog for the whole
   // page rather than one per row — mounting 50 of them to show at most one is waste.
@@ -84,6 +84,7 @@ export default function ProductsPage() {
             progress={progress}
             status={status}
             onScan={start}
+            onCancel={cancel}
           />
         </Panel>
 
@@ -226,6 +227,22 @@ function FoundTable({
   onLoadMore,
   onEdit,
 }: Omit<CatalogueProps, "status" | "progress"> & { scanning: boolean }) {
+  /**
+   * The rows that were already here when this table first painted. Anything outside it
+   * arrived afterwards — off the scan's SSE stream, from the editor, or from the next
+   * page — and only those get the entrance.
+   *
+   * The alternative, gating the class on `scanning`, looks equivalent and is not: adding
+   * an animation class to elements that are already mounted replays it on all of them, so
+   * starting a scan would flash the entire catalogue. Keying off the row's own identity
+   * means the animation runs where CSS already runs it exactly once — on mount.
+   *
+   * There is no stagger and none is wanted. Streamed rows arrive at the pace the crawler
+   * reads pages, which is a real rhythm; a synthetic delay on top would only make a fast
+   * scan feel slower than it is.
+   */
+  const [arrived] = React.useState(() => new Set(rows.map((row) => row.uuid)));
+
   // Six bars and not out of stock — the same two conditions `tierFor` reads, so the count
   // and the row labels under it cannot disagree.
   const ready = rows.filter(
@@ -285,6 +302,7 @@ function FoundTable({
                 // ever looked like it set the padding.
                 className={cn(
                   "flex flex-wrap items-center gap-x-2.5 gap-y-2 hover:bg-faint",
+                  !arrived.has(p.uuid) && "animate-row-in",
                   COLUMNS
                 )}
               >

@@ -126,19 +126,18 @@ export function useAudit(domain: string, seq?: number) {
   }, [load, filter]);
 
   /**
-   * The row under inspection. Derived, never stored: a row the current filter excludes falls
-   * back to the first one still showing, which is the inspector's rule everywhere.
+   * The open row. Derived, never stored, and with no fallback: nothing selected means the
+   * drawer is shut, so picking a row for the merchant would open it on page load.
    *
-   * The linked `seq` is the one exception, and `selected === seq` is what spots it. An
-   * order's decision can sit thousands of entries down, well below the pages loaded here, so
-   * falling back would answer "what allowed this order?" with an unrelated entry. It is
-   * fetched instead — the detail response is a superset of a row, so the rail loses nothing.
+   * `undefined` here does not mean nothing is open. A linked `?seq=` — an order's decision can
+   * sit thousands of entries down, well below the pages loaded — has no row to find, and so
+   * does an entry the current filter now excludes. Both are fetched instead: the detail
+   * response is a superset of a row, so the drawer loses nothing.
    */
-  const entry =
-    rows.find((row) => row.seq === selected) ?? (selected === seq ? undefined : rows[0]);
+  const entry = rows.find((row) => row.seq === selected);
 
-  /** Which entry the rail is about, loaded row or not. */
-  const inspecting = entry?.seq ?? selected ?? undefined;
+  /** Which entry the drawer is about, loaded row or not. */
+  const inspecting = selected ?? undefined;
 
   /**
    * `prev_hash` and the raw `detail` blob are on the detail response only — a list row
