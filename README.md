@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Munim — frontend
 
-## Getting Started
+Next.js 16 / React 19 dashboard for Munim, a trust-and-visibility layer for agentic commerce:
+it lets a merchant's store transact safely with AI shopping agents (policy gate, audit ledger)
+and be discoverable to them (agent-readable catalogue, MCP endpoint).
 
-First, run the development server:
+It is a pure client of the Django API — there is no database, no server-side data fetching and
+no BFF here. Auth is a cross-origin `sessionid` cookie owned by the API origin.
+
+## Running it locally
+
+Prerequisites: [Bun](https://bun.sh) and the Munim Django backend running on
+`https://localhost:8099` (self-signed cert is fine).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install
+# create .env.local (see below)
+bun dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.gitignore` covers `.env*`, so nothing is committed — write `.env.local` yourself with two
+variables:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# The API origin. https, not http: the sessionid cookie is Secure + SameSite=None.
+NEXT_PUBLIC_API_URL=https://localhost:8099
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Public OAuth client id for Google sign-in. NEXT_PUBLIC_* is inlined into the browser
+# bundle — never put the client_secret here; the GIS id_token flow does not use it.
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=...
+```
 
-## Learn More
+Scripts:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+bun dev         # dev server (also regenerates AGENTS.md and .next/dev/types/*)
+bun build
+bun start
+bun lint        # bare `eslint`, no path args — config in eslint.config.mjs
+bun run openapi-ts   # regenerate src/client from the backend's OpenAPI schema
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Three things that will trip you up on a fresh checkout:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Typecheck fails until `next dev` has run once.** Route props come from generated globals
+  (`LayoutProps<"/">`) that live in `.next/dev/types/routes.d.ts`.
+- **`bun lint` is not green, expected.** One `react-hooks/set-state-in-effect` error in
+  shadcn's own `hooks/use-mobile.ts` and one `import/no-anonymous-default-export` warning on
+  `openapi-ts.config.ts`. Anything else is new.
+- **`NODE_TLS_REJECT_UNAUTHORIZED=0`** is set by every script, for the backend's self-signed
+  dev cert. Your browser will also want you to accept it once at `https://localhost:8099`.
 
-## Deploy on Vercel
+There is no test runner configured.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/                  routes (App Router)
+  page.tsx            /            landing page
+  auth/               /auth        login + register
+  dashboard/          merchant area — layout.tsx is the auth guard
+    page.tsx          overview   orders/    payments/  products/
+    ledger/           policy/    razorpay/  webhooks/
+  buyer/              buyer area — layout.tsx is the auth + role guard
+    page.tsx          create mandate
+    mandates/  orders/  api-keys/
+  globals.css         shadcn token bridge → Munim role tokens
+  munim-theme.css     the design system: navy scale, role tokens, .dark, @theme blocks
+
+components/
+  ui/                 shadcn (Radix-based, style radix-luma) — mostly untouched
+  dashboard/          merchant screens and their pieces; parts.tsx holds the shared bits
+  buyer/              buyer screens
+  app-sidebar.tsx     merchant rail        buyer-sidebar.tsx   buyer rail
+  landing.tsx         the whole marketing page
+  theme-toggle.tsx    light/dark, hand-rolled (not next-themes)
+
+hooks/                one hook per screen — use-orders, use-policy, use-ingest, use-audit, …
+                      each owns its screen's whole data flow; this is where to change behaviour
+lib/
+  api.ts              client config: credentials:"include", API_BASE, basicAuth, describeApiError
+  dashboard-data.ts   the last of the mock data (Overview figures) + policy copy
+  utils.ts            cn()
+src/client/           GENERATED by openapi-ts — never hand-edited, eslint-ignored
+```
+
+Docs at the root: `PRODUCT.md` (what the product is), `DESIGN.md` (binding design system),
+`CLAUDE.md` (per-screen engineering notes — the API traps each screen is built around),
+`AGENTS.md` (auto-written by `next dev`).
+
+## Stack notes
+
+- **Next.js 16 + React 19.** Conventions differ from older Next; the local docs are in
+  `node_modules/next/dist/docs/`.
+- **Tailwind v4, CSS-first.** No `tailwind.config.*` exists and none should be created — the
+  theme lives in `app/munim-theme.css` + `app/globals.css`. Use the generated utilities
+  (`text-card-title`, `bg-panel-2`, `text-muted-ink`, `shadow-card`), not arbitrary values.
+- **shadcn/ui, style `radix-luma`.** Add components with `bunx shadcn@latest add <name>`;
+  they import from the unified `radix-ui` package. `sidebar.tsx`, `drawer.tsx` and
+  `sonner.tsx` are edited away from the registry default — re-running `add` on those reverts
+  real decisions (reasons are in comments and in `CLAUDE.md`).
+- **`@/*` maps to the repo root**, so `@/components`, `@/lib`, `@/hooks`.
+- **Every screen that touches the API is a client component.** The `sessionid` cookie belongs
+  to the API origin, so nothing rendered on the server can ask it anything — including Next
+  middleware, which is why the auth guards are client-side layouts.
+- **All feedback goes through Sonner.** One `<Toaster />` in `app/layout.tsx`; there is no
+  inline error copy in any page.
