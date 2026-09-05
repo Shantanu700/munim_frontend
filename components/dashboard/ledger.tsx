@@ -20,22 +20,8 @@ import { API_BASE } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { LedgerEntry, LedgerEntryDetail } from "@/src/client";
 
-/** Shared by the header row and the entry rows so the columns line up. */
 const COLUMNS = "grid-cols-[52px_120px_minmax(0,1fr)_100px_240px]";
 
-/**
- * The one place real red is right on this screen, and the third sanctioned exception to
- * DESIGN.md §1 rule 2 after sonner's `richColors` and `RED_TINT` in `parts.tsx`.
- *
- * `bg-deny-tint text-deny` would be the system pair, but `--deny` is `#0A1931` — deep navy,
- * because a *verdict* must never read as traffic-light. A broken hash chain is not a verdict:
- * it is the claim this whole screen exists to make failing, and it should not look like a
- * DENY row scrolling past underneath it. Tailwind's own palette for the same reason
- * `RED_TINT` uses it — nothing else here is red, so this earns no token.
- *
- * The word still carries the meaning either way ("broken at entry N"), so rule 2's real
- * requirement — colour never travelling alone — holds.
- */
 const BROKEN_TINT = "bg-red-600/10 text-red-600 dark:bg-red-500/15 dark:text-red-400";
 
 const FILTERS: { label: string; decision: Decision | null }[] = [
@@ -45,31 +31,16 @@ const FILTERS: { label: string; decision: Decision | null }[] = [
   { label: "Deny", decision: "DENY" },
 ];
 
-/** A 64-hex digest, short enough for a table cell. The copy button still yields all of it. */
 const short = (hash: string) => `${hash.slice(0, 12)}…`;
 
-/**
- * What happened, in one line: the action, who asked, and for whom.
- *
- * Every segment can legitimately be blank — `agent` and `buyer_label` are `""` rather than
- * `null`, since the view coerces with `detail.get(…) or ""` — so this filters on falsiness
- * and drops the separators with them. Most of a real chain is merchant actions with neither.
- */
 function eventLine(row: LedgerEntry) {
   return [row.action.replace(/_/g, " "), callerOf(row), row.buyer_label]
     .filter(Boolean)
     .join(" · ");
 }
 
-/** An amount the entry did not record is not zero: an early denial never reached a price. */
 const amountOf = (paise: number | null) => (paise === null ? "—" : rupees(paise));
 
-/**
- * One value out of the raw `detail` blob. Every key is optional and the set differs per
- * action — entries are permanent, so rows written before a key existed still render — which
- * is why this formats by key *shape* rather than from a label map. A map would need a
- * frontend release for every key the engine learns to write.
- */
 function detailValue(key: string, value: unknown) {
   if (value === null || value === undefined) return "—";
   if (key.endsWith("_paise") && typeof value === "number") return rupees(value);
@@ -77,19 +48,6 @@ function detailValue(key: string, value: unknown) {
   return String(value);
 }
 
-/**
- * The audit ledger.
- *
- * Live: `GET /audit/entries` paginated on `seq` descending, one entry opened through
- * `GET /audit/entries/{seq}` for its chain position, and the public `GET /audit/verify`
- * re-hashing the whole chain.
- *
- * A client component because the whole screen is one interaction: the filter pills and the
- * selected row both drive what the drawer shows. The page above it stays a server component
- * so it can await `?seq=` — see `app/dashboard/ledger/page.tsx`.
- *
- * `seq` is the entry to open, which is how an order links to the decision that allowed it.
- */
 export function Ledger({ seq }: { seq?: number }) {
   const domain = useSession().merchant?.domain ?? "";
   const {
@@ -110,17 +68,7 @@ export function Ledger({ seq }: { seq?: number }) {
   } = useAudit(domain, seq);
 
   const verifyUrl = `${API_BASE}/audit/verify${domain ? `?merchant=${domain}` : ""}`;
-  // The response carries its own `seq`, so a detail still in flight — or one left over from
-  // the previously selected row — is simply not shown against the wrong entry.
   const position = detail?.seq === inspecting ? detail : null;
-  /**
-   * What the drawer describes. A linked entry, or one the filter now excludes, can sit below
-   * every page loaded and have no row here — and `LedgerEntryDetail` is a superset of
-   * `LedgerEntry`, so the fetched detail draws the whole drawer on its own.
-   *
-   * It is also what `open` is derived from, rather than the raw selection: an entry that
-   * cannot be described should close the drawer, not leave an empty one standing.
-   */
   const shown = entry ?? position;
   const denied = rows.filter((row) => row.decision === "DENY").length;
 
@@ -141,9 +89,6 @@ export function Ledger({ seq }: { seq?: number }) {
         </div>
       </div>
 
-      {/* The filter pills left the right half of this row empty and the verification pair left
-          the left half of its own row empty, so they share one row — the same shape the orders
-          screen's filter row uses, pills against a right-aligned meta block. */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 px-1.5">
         <div className="flex flex-wrap gap-2">
           {FILTERS.map((f) => (
@@ -165,8 +110,6 @@ export function Ledger({ seq }: { seq?: number }) {
         </div>
 
         <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
-          {/* Nothing until the check on mount resolves — a pill claiming a verification that
-              has not happened is worse than no pill. */}
           {chain ? (
             <span
               className={cn(
@@ -233,8 +176,6 @@ export function Ledger({ seq }: { seq?: number }) {
 
             <Empty rows={rows.length} loading={loading} filtered={filter !== null} />
 
-            {/* Inside the scroller, so it sits at the foot of the list rather than pinned
-                under a card nobody has scrolled to the end of. */}
             {remaining > 0 ? <LoadMore busy={busy} onLoadMore={loadMore} /> : null}
           </div>
         </div>
@@ -247,7 +188,6 @@ export function Ledger({ seq }: { seq?: number }) {
         ) : null}
       </Panel>
 
-      {/* `select(null)` is what closes it, so the open entry and the drawer cannot disagree. */}
       <Drawer
         direction="right"
         open={shown !== null}
@@ -262,11 +202,6 @@ export function Ledger({ seq }: { seq?: number }) {
   );
 }
 
-/**
- * One entry, in the drawer. `shown` is whichever of the loaded row and the fetched detail is
- * available; `position` is the detail alone, and the two hash rows and the raw blob are its
- * only readers — everything above them draws from a list row just as well.
- */
 function EntryDrawer({
   shown,
   entry,
@@ -279,23 +214,16 @@ function EntryDrawer({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <DrawerHeader className="gap-0 p-6 pb-0">
-        {/* `pr-10` clears the drawer's own close button, which floats at `top-6 right-6`. */}
         <div className="flex items-center justify-between gap-3 pr-10">
           <VerdictPill verdict={shown.decision} />
           <span className="text-eyebrow uppercase text-muted-ink">entry {shown.seq}</span>
         </div>
-        {/* Only when the entry is not one of the rows behind the drawer — a link from an
-            order lands on an entry that may be a thousand decisions back. */}
         {entry ? null : (
           <p className="mt-2.5 max-w-none text-meta text-muted-ink">
             Opened from a link. This entry is older than the ones in the list behind it.
           </p>
         )}
         <DrawerTitle className="mt-4 text-accent-ink break-all">{shown.reason_code}</DrawerTitle>
-        {/* Blank for most codes, and that is the backend's design, not a gap: only the
-            gate's verdicts have a sentence, and `describe()` returns "" for anything
-            else so that a code a later release retires still renders. An empty element
-            would leave its margin behind, so it is not rendered at all. */}
         {shown.reason_description ? (
           <DrawerDescription className="mt-2 text-body text-muted-ink">
             {shown.reason_description}
@@ -345,8 +273,6 @@ function EntryDrawer({
           ))}
         </div>
 
-        {/* What was hashed. The keys differ per action and every one is optional, so
-            they are printed as the engine wrote them rather than relabelled. */}
         {position && Object.keys(position.detail).length ? (
           <>
             <div className="mt-4 text-eyebrow uppercase text-muted-ink">recorded detail</div>
@@ -367,13 +293,6 @@ function EntryDrawer({
   );
 }
 
-/**
- * Whichever of the three zero-row states is true. An early-return chain rather than sibling
- * ternaries, and `loading` renders nothing at all — a spinner on first paint only flashes.
- *
- * "Nothing at all" and "nothing matching" are different sentences on purpose: a merchant
- * whose gate has decided nothing yet should not be told about a filter they never set.
- */
 function Empty({ rows, loading, filtered }: { rows: number; loading: boolean; filtered: boolean }) {
   if (rows > 0 || loading) return null;
   return (

@@ -6,23 +6,14 @@ import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/* Ported from the design project's `Munim Landing.dc.html` (project 6b9dc3ec). Every
- * figure on this page is copy, not data — there is no public API to read a store's
- * ledger from, and a landing page that fetched one would be showing someone else's.
- *
- * Colours, radii and type come from the token utilities (DESIGN.md §9); the design
- * file's raw `var(--panel)` / `var(--r-xl)` inline styles map onto them one for one. */
-
 type Tone = "allow" | "step" | "deny";
 
-/** Verdict colour is never carried alone — every pill below prints the word too (§1 rule 2). */
 const TONE: Record<Tone, string> = {
   allow: "bg-allow-tint text-allow",
   step: "bg-step-tint text-step",
   deny: "bg-deny-tint text-deny",
 };
 
-/** The slider's fill and thumb are one native `accent-color`, so this side wants the raw token. */
 const TONE_VAR: Record<Tone, string> = {
   allow: "var(--allow)",
   step: "var(--step)",
@@ -255,7 +246,6 @@ const PROOF = [
   },
 ];
 
-/** The gate demo's three bands. The buyer signed ₹6,000 per purchase and a ₹60,000 ceiling. */
 function verdictFor(n: number) {
   if (n <= 6000)
     return {
@@ -279,8 +269,6 @@ function verdictFor(n: number) {
   };
 }
 
-/* Full-bleed: the page gutter is the 6px panel gap on the shell, nothing else. Line length
- * is held by the per-block `max-w-*` on the paragraphs, not by a cap on the panels. */
 const SHELL = "w-full";
 const PANEL = `${SHELL} rounded-xl bg-panel shadow-card`;
 const CTA_NAVY = "h-14 bg-navy-200 px-8 text-body font-medium text-navy-900 hover:bg-navy-050";
@@ -301,9 +289,6 @@ function Wordmark() {
   );
 }
 
-/** Reveal-on-scroll as one observer per section. It only ever *adds* the visible state, so
- * a section is never hidden again once read — and reduced motion collapses the transition
- * to ~0ms globally (globals.css), which leaves the content exactly where it lands. */
 function Reveal({ className, children }: { className?: string; children: React.ReactNode }) {
   const [shown, setShown] = React.useState(false);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -339,8 +324,6 @@ function Reveal({ className, children }: { className?: string; children: React.R
 }
 
 export function Landing() {
-  // The live console cycles three scenarios; each one reveals its checks, then the verdict,
-  // then the ledger line. `tick` starts at 0 on server and client, so hydration matches.
   const [tick, setTick] = React.useState(0);
   const [amount, setAmount] = React.useState(8500);
   const [rule, setRule] = React.useState(1);
@@ -355,9 +338,6 @@ export function Landing() {
     return () => clearInterval(t);
   }, []);
 
-  // One rAF-throttled listener drives all three scroll effects: the progress bar (written
-  // straight to the node, so a scroll frame never re-renders the page), the topbar's
-  // narrowing, and which step the timeline is on.
   React.useEffect(() => {
     let frame = 0;
     const measure = () => {
@@ -403,11 +383,9 @@ export function Landing() {
     <div className="flex flex-col items-center gap-panel px-panel pt-panel">
       <div ref={bar} className="pointer-events-none fixed top-0 left-0 z-40 h-[3px] w-0 bg-tile" />
 
-      {/* top bar */}
       <header
         className={cn(
           "sticky top-panel z-20 flex w-full items-center gap-6 rounded-pill bg-panel py-3 pr-3 pl-6 shadow-card transition-[max-width] duration-400 ease-out-quart",
-          // the narrowing is proportional now that the panels are full-bleed
           scrolled ? "max-w-[calc(100%-4rem)]" : "max-w-full",
         )}
       >
@@ -434,7 +412,6 @@ export function Landing() {
         </div>
       </header>
 
-      {/* hero */}
       <section
         className={cn(
           SHELL,
@@ -470,7 +447,6 @@ export function Landing() {
           </div>
         </div>
 
-        {/* live gate console */}
         <div className="flex animate-row-in flex-col gap-panel">
           <div className="rounded-lg bg-panel p-6 text-foreground">
             <div className="flex items-center justify-between gap-3">
@@ -539,7 +515,6 @@ export function Landing() {
         </div>
       </section>
 
-      {/* mechanics strip */}
       <Reveal className={cn(PANEL, "grid gap-9 p-8 sm:grid-cols-2 lg:grid-cols-4 lg:px-11")}>
         {MECHANICS.map((m) => (
           <div
@@ -553,7 +528,6 @@ export function Landing() {
         ))}
       </Reveal>
 
-      {/* problem */}
       <Reveal className={cn(PANEL, "grid items-start gap-8 p-8 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:gap-14 lg:p-11")}>
         <div>
           <Eyebrow>the problem</Eyebrow>
@@ -581,7 +555,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* how it works */}
       <Reveal className={cn(PANEL, "p-8 lg:px-11 lg:py-10")}>
         <div id="how" className="flex flex-wrap items-end justify-between gap-6 scroll-mt-24">
           <div>
@@ -637,7 +610,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* rules explorer */}
       <Reveal className={cn(PANEL, "p-8 lg:px-11 lg:py-10")}>
         <div id="rules" className="flex flex-wrap items-end justify-between gap-6 scroll-mt-24">
           <div>
@@ -695,7 +667,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* try the gate */}
       <Reveal className={cn(PANEL, "grid items-center gap-11 p-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:px-11 lg:py-10")}>
         <div>
           <Eyebrow>try the gate</Eyebrow>
@@ -748,7 +719,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* the ledger */}
       <Reveal className={cn(SHELL, "grid items-stretch gap-panel lg:grid-cols-2")}>
         <div id="ledger" className="flex flex-col rounded-xl bg-panel p-8 shadow-card scroll-mt-24 lg:px-11 lg:py-10">
           <Eyebrow>the ledger</Eyebrow>
@@ -806,7 +776,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* the money */}
       <Reveal className={cn(PANEL, "grid items-center gap-11 p-8 lg:grid-cols-2 lg:px-11 lg:py-10")}>
         <div>
           <Eyebrow>the money</Eyebrow>
@@ -838,7 +807,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* for buyers */}
       <Reveal className={cn(PANEL, "grid items-center gap-11 p-8 lg:grid-cols-2 lg:px-11 lg:py-10")}>
         <div id="buyers" className="scroll-mt-24">
           <Eyebrow>for buyers</Eyebrow>
@@ -874,7 +842,6 @@ export function Landing() {
         </dl>
       </Reveal>
 
-      {/* closing */}
       <Reveal
         className={cn(
           SHELL,
@@ -897,7 +864,6 @@ export function Landing() {
         </div>
       </Reveal>
 
-      {/* footer */}
       <footer
         className={cn(
           SHELL,

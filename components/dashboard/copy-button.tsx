@@ -5,11 +5,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
-/**
- * Copies `value` to the clipboard. Everything else is an ordinary Button, so the same
- * component serves the full-width "Copy address" pill on a dark panel and the icon-sized
- * one at the end of a ledger row.
- */
 export function CopyButton({
   value,
   copiedLabel = "Copied.",

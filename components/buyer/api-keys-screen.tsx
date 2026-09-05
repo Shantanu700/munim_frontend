@@ -26,30 +26,16 @@ import { useApiKeys } from "@/hooks/use-api-keys";
 import { cn } from "@/lib/utils";
 import type { PlatformApiKey, PlatformApiKeyIssued } from "@/src/client";
 
-/* `mandate-form.tsx`'s three form constants, restated for the dark panel: the field surface is
-   `--navy-200` at 12% rather than `--panel-2`, and secondary text is `--navy-200` rather than
-   `--muted`. Same recipe the Razorpay screen's dark panel uses. Two call sites is not a shared
-   module — if a third screen wants them they move into `parts.tsx`. */
 const FIELD =
   "flex h-11 items-center gap-2 rounded-full bg-navy-200/12 px-4 text-body focus-within:ring-3 focus-within:ring-navy-200/40";
 const INPUT =
   "min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-navy-200/60";
 const LABEL = "px-1 text-eyebrow uppercase text-navy-200";
 
-/** A button on the dark panel: navy-200 on navy-900, since `variant` knows nothing about it.
-    Same literal as `razorpay/page.tsx`'s `ON_NAVY` — two call sites, so still local to each. */
 const ON_NAVY = "bg-navy-200 text-navy-900 hover:bg-navy-200/85";
 
-/* The platform-wide MCP endpoint every buyer key is used against. It is on no endpoint —
-   `Login.merchant` is `null` for a buyer and nothing reports a platform URL — so it comes
-   from the environment rather than being guessed off `API_BASE`. Unset renders nothing:
-   a wrong address here is worse than none, since a key is only useful against a real one. */
 const MCP_URL = process.env.NEXT_PUBLIC_MCP_URL;
 
-/**
- * Two states, not `MandateList`'s four: `revoked_at` is the whole of it. §1 rule 2 still
- * applies — the word carries the meaning and the colour only seconds it.
- */
 function StatePill({ revoked }: { revoked: boolean }) {
   return (
     <span
@@ -76,8 +62,6 @@ function RevokeButton({
 }) {
   const [open, setOpen] = React.useState(false);
 
-  // Same split as `MandateList`'s revoke and the kill-switch's confirm: this closes the
-  // popover, `useApiKeys` owns the request and its own toast.
   async function confirm() {
     await revoke(uuid);
     setOpen(false);
@@ -111,8 +95,6 @@ function RevokeButton({
   );
 }
 
-/** `prefix` and `created_at` are the only fields the wire guarantees; everything else on
-    `PlatformApiKey` is optional, nullable, or both. */
 function KeyRow({
   apiKey,
   busy,
@@ -139,7 +121,6 @@ function KeyRow({
           {apiKey.revoked_at ? ` · revoked ${moment(apiKey.revoked_at)}` : ""}
         </div>
       </div>
-      {/* The `uuid` guard is what makes the optional field safe to pass to a path param. */}
       {!revoked && apiKey.uuid ? (
         <RevokeButton uuid={apiKey.uuid} name={name} busy={busy} revoke={revoke} />
       ) : null}
@@ -147,13 +128,6 @@ function KeyRow({
   );
 }
 
-/**
- * `/buyer/api-keys` — mint, list and revoke the buyer's own platform keys.
- *
- * One file rather than the mandates screen's form/list pair: those split because their halves
- * are two routes, and this is one. Everything else is that screen's pattern — a create panel,
- * a copy-now-or-lose-it dialog, and a list whose rows confirm before they destroy anything.
- */
 export function ApiKeysScreen() {
   const { keys, loading, busy, create, revoke } = useApiKeys();
   const [name, setName] = React.useState("");
@@ -161,9 +135,6 @@ export function ApiKeysScreen() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    /* The wire allows a blank name (`PlatformApiKeyCreate.name` is optional), but a list of
-       keys is a list of prefixes — without a name there is nothing to tell them apart by when
-       the time comes to revoke one. */
     if (!name.trim()) {
       toast.error("Name the key so you can tell it apart later.");
       return;
@@ -184,8 +155,6 @@ export function ApiKeysScreen() {
         </p>
       </div>
 
-      {/* `PlatformApiKeyIssued.key` is a bearer credential returned exactly once. Dismissing
-          the dialog is the only exit, so the copy sits where the eye already is. */}
       <Dialog open={issued !== null} onOpenChange={(open) => !open && setIssued(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -213,10 +182,6 @@ export function ApiKeysScreen() {
         </DialogContent>
       </Dialog>
 
-      {/* The list takes the width and the form is the fixed rail, the shape every two-column
-          screen in this app uses (ledger, products, razorpay). `items-start` so the short form
-          panel sizes to its content instead of stretching to the list's height. Stacked below
-          `lg` the list comes first, which is why its empty state points down at the form. */}
       <div className="grid items-start gap-panel lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_420px]">
         <div className="rounded-xl bg-panel p-6 shadow-card">
           <PanelHeader title="Your keys" meta={keys.length || undefined} />
@@ -240,8 +205,6 @@ export function ApiKeysScreen() {
           </div>
         </div>
 
-        {/* §1 rule 5: one dark panel per screen, and it goes to the action — a key is the only
-            thing a buyer comes here to make, and the list beside it is just the record. */}
         <form
           onSubmit={handleSubmit}
           className="rounded-xl bg-navy-900 p-6 text-navy-050 shadow-card"
@@ -265,9 +228,6 @@ export function ApiKeysScreen() {
           <Button type="submit" disabled={busy} className={cn("mt-6 h-11 w-full", ON_NAVY)}>
             {busy ? "Working…" : "Create key"}
           </Button>
-          {/* The address the key is used against, in the same panel as the key itself —
-              one is useless without the other. Compact: the button is the narrow half, so
-              this costs one row rather than three. */}
           {MCP_URL ? (
             <div className="mt-6 border-t border-navy-200/20 pt-4">
               <div className={LABEL}>MCP endpoint</div>

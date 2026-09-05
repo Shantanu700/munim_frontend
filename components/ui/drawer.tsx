@@ -45,19 +45,6 @@ function DrawerOverlay({
   )
 }
 
-/**
- * Edited away from the registry default, the way `button.tsx` is. The radix-luma drawer
- * already floats its surface as a `before:` pseudo-element inset from the content box, which
- * is the shape the design wants — only its values were shadcn's generic ones. Swapped for
- * tokens: `inset-panel` (the 6px DESIGN.md §4 calls non-negotiable, and the same gap the
- * floating sidebar sits at), `rounded-xl` (--radius-xl, 32px, this repo's name for a
- * top-level card), `bg-panel` over `bg-popover`, `shadow-card` over `shadow-xl`, and no
- * border — `Panel` has none. `p-4` became `p-panel` so children align with the visible
- * surface rather than sitting 8px inside it, which means a caller supplies its own `p-6`.
- *
- * Re-running `shadcn add drawer` overwrites all of that, and also rewrites line 4 back to
- * `import { cn } from "cn"`, which does not resolve. Re-apply both if you ever do.
- */
 function DrawerContent({
   className,
   children,

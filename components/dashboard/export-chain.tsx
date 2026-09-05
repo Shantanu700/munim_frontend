@@ -9,16 +9,6 @@ import { getAuditExport } from "@/src/client";
 
 const OFFLINE = "Could not reach the server. Check your connection and try again.";
 
-/**
- * Download the whole hash chain, from genesis, in the form a third party can re-hash.
- *
- * `GET /audit/export` is deliberately unpaginated and unfiltered — a partial chain cannot be
- * verified — so this is a click-time fetch and the response is never held in state: nothing
- * on any screen renders it.
- *
- * A component of its own rather than an `ExportButton` at each call site, because Overview is
- * a server component and a fetching thunk cannot cross that boundary as a prop.
- */
 export function ExportChainButton({
   children = "Export chain (JSON)",
   className,

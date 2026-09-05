@@ -7,15 +7,6 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import type { Login, Merchant } from "@/src/client";
 
-/**
- * The header bar above every dashboard screen.
- *
- * `merchant` is `Login.merchant`, already fetched by the layout's own auth guard — no second
- * request for a name/domain this screen could otherwise get from `GET /dashboard/`.
- *
- * `agentsOn` is owned by `app/dashboard/layout.tsx` because the sidebar's kill switch is the
- * same boolean.
- */
 export function Topbar({
   user,
   merchant,
@@ -62,12 +53,6 @@ export function Topbar({
               agentsOn ? "bg-navy-700" : "bg-step"
             )}
           >
-            {/* Transform, not `left`: the knob is the one thing on screen that has to
-                move, and moving it by a layout property re-lays-out the switch on every
-                frame. 260ms on the quint curve — a shade longer and more decisive than
-                the 180ms default, because this is the control that arms and disarms the
-                whole store, and it should read as a lever being thrown rather than a
-                colour quietly changing. */}
             <span
               className={cn(
                 "absolute top-[3px] left-[3px] size-4 rounded-full bg-panel transition-transform duration-260 ease-out-quint",

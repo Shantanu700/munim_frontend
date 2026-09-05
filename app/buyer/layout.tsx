@@ -12,15 +12,6 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 const BUYER = 3;
 
-/**
- * The auth *and role* guard for everything under /buyer — same shape as
- * `app/dashboard/layout.tsx` and for the same reason: the `sessionid` cookie belongs to
- * the API origin, so only a client-side `GET /core/login/` can tell who is signed in.
- *
- * The role check is what stops a merchant from reaching a buyer URL by typing it (and,
- * symmetrically, `app/dashboard/layout.tsx` bounces a buyer the other way) — both guards
- * re-check on every mount, since neither can rely on the other having run.
- */
 export default function BuyerLayout({ children }: LayoutProps<"/buyer">) {
   const router = useRouter();
   const [user, setUser] = React.useState<Login | null>(null);

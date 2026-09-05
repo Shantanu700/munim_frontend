@@ -23,24 +23,9 @@ import { useBuyerOrders, type BuyerOrderStatus } from "@/hooks/use-buyer-orders"
 import { cn } from "@/lib/utils";
 import type { BuyerOrder, BuyerOrderDetail, BuyerPayment } from "@/src/client";
 
-/**
- * The list reflows on its own panel's width, not the viewport's — a container query, the same
- * choice the catalogue and the merchant orders table make. 42.5rem is the width the five
- * columns need; under it each order stacks into a card rather than scrolling sideways and
- * putting the amount off-screen.
- *
- * One DOM serves both. DOM order is the card order (order, merchant, product, amount, status),
- * so the narrow form reads correctly unstyled, and `@[42.5rem]:order-*` restores the column
- * order above the threshold.
- */
 const COLUMNS =
   "@[42.5rem]:grid @[42.5rem]:grid-cols-[136px_minmax(120px,1fr)_minmax(140px,1.2fr)_100px_136px] @[42.5rem]:items-center @[42.5rem]:gap-2.5";
 
-/**
- * The four the endpoint accepts, plus All — which is the parameter being absent, not a value.
- * No counts beside them: there is no buyer equivalent of `GET /orders/counts`, and a pill
- * printing a number this screen cannot source would be a number it had invented.
- */
 const PILLS: { key: BuyerOrderStatus | null; label: string }[] = [
   { key: null, label: "All" },
   { key: "paid", label: "Paid" },
@@ -49,16 +34,8 @@ const PILLS: { key: BuyerOrderStatus | null; label: string }[] = [
   { key: "expired", label: "Expired" },
 ];
 
-/** Order numbers are not guaranteed to be set; the uuid is, and its head is enough to read. */
 const label = (order: BuyerOrder) => order.order_number || order.uuid.slice(0, 8);
 
-/**
- * Every order this buyer has placed, across every store they have bought from.
- *
- * A client component because the pills, the search, the open order and the paging are all one
- * interaction. `hooks/use-buyer-orders.ts` owns every request and every toast; nothing below
- * fetches, and there is no inline error copy — a failure is a toast over an empty state.
- */
 export function BuyerOrdersScreen() {
   const {
     rows,
@@ -78,8 +55,6 @@ export function BuyerOrdersScreen() {
   } = useBuyerOrders();
 
   const order = rows.find((row) => row.uuid === selected);
-  // The detail response and the open order can disagree for one render, which is what this
-  // guard replaces — clearing `detail` in the hook's effect would be a lint error.
   const full = detail?.uuid === selected ? detail : null;
 
   return (
@@ -130,7 +105,6 @@ export function BuyerOrdersScreen() {
 
       <div className="@container rounded-xl bg-panel p-6 shadow-card">
         <div className="grid gap-panel @[42.5rem]:min-w-170">
-          {/* px-4 matches RowButton's own padding, so the labels sit over the cells they name. */}
           <div
             className={cn(
               "hidden px-4 pb-2.5 text-table-head uppercase text-muted-ink",
@@ -157,13 +131,10 @@ export function BuyerOrdersScreen() {
             >
               <span className="shrink-0">
                 <span className="block text-dense font-medium">{label(row)}</span>
-                {/* The wire carries ISO-8601; the reader's timezone is only known here. */}
                 <span className="mt-0.5 block text-meta text-muted-ink">
                   {moment(row.authorized_at)}
                 </span>
               </span>
-              {/* Where the merchant screen puts the agent. This list spans stores, so which
-                  shop an order came from is the fact that orients a buyer in it. */}
               <span className="min-w-0 truncate text-dense text-muted-ink">
                 {row.merchant_domain}
               </span>
@@ -180,8 +151,6 @@ export function BuyerOrdersScreen() {
             </RowButton>
           ))}
 
-          {/* Nothing at all while loading: a spinner on first paint only flashes. The two
-              empty sentences are different because the states are. */}
           {loading || rows.length ? null : (
             <p className="max-w-none py-8 text-center text-body text-muted-ink">
               {filtered
@@ -194,7 +163,6 @@ export function BuyerOrdersScreen() {
         </div>
       </div>
 
-      {/* `select(null)` is what closes it, so the open order and the drawer cannot disagree. */}
       <Drawer
         direction="right"
         open={selected !== null}
@@ -208,15 +176,10 @@ export function BuyerOrdersScreen() {
   );
 }
 
-/**
- * The open order. Everything but `payments` came with the list row, so the drawer is readable
- * the instant it opens and fills in the history when the detail call lands.
- */
 function OrderDrawer({ order, full }: { order: BuyerOrder; full: BuyerOrderDetail | null }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <DrawerHeader className="gap-0 p-6 pb-0">
-        {/* `pr-10` clears the drawer's own close button, which floats at `top-6 right-6`. */}
         <div className="flex items-center justify-between gap-3 pr-10">
           <OrderStatusPill status={order.status} />
           <span className="text-eyebrow uppercase text-muted-ink">{label(order)}</span>
@@ -238,8 +201,6 @@ function OrderDrawer({ order, full }: { order: BuyerOrder; full: BuyerOrderDetai
           ))}
         </div>
 
-        {/* Blank in the ordinary case — an order exists only on an ALLOW — and an empty
-            element would still take its margin. */}
         {order.failure_reason_description ? (
           <Row className="mt-4">
             <div className="text-meta font-medium tracking-[0.03em]">
@@ -251,8 +212,6 @@ function OrderDrawer({ order, full }: { order: BuyerOrder; full: BuyerOrderDetai
           </Row>
         ) : null}
 
-        {/* A link, which the list row could not hold: `RowButton` is a real button and may
-            contain no other interactive element. */}
         <a
           href={order.product_url}
           target="_blank"
@@ -262,8 +221,6 @@ function OrderDrawer({ order, full }: { order: BuyerOrder; full: BuyerOrderDetai
           View it on {order.merchant_domain} <ArrowUpRightIcon className="size-3.5" />
         </a>
 
-        {/* The reason the detail call exists: `payments` is the one field a list row does not
-            carry. Until it lands there is nothing honest to draw, so the section waits. */}
         <div className="mt-6">
           <PanelHeader
             title="Payment attempts"
@@ -290,15 +247,12 @@ function OrderDrawer({ order, full }: { order: BuyerOrder; full: BuyerOrderDetai
   );
 }
 
-/** One payment link, oldest attempt first — the order the API sends them in. */
 function PaymentRow({ payment }: { payment: BuyerPayment }) {
   return (
     <Row>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <span className="flex items-center gap-2.5">
           <span className="text-dense font-medium">Attempt {payment.attempt}</span>
-          {/* `BuyerPaymentStatusEnum` is the same four strings as an order's, and the pill
-              takes a bare string, so the map and its neutral fallback both apply. */}
           <OrderStatusPill status={payment.status} />
         </span>
         <span className="text-dense font-medium tabular-nums">
@@ -320,8 +274,6 @@ function PaymentRow({ payment }: { payment: BuyerPayment }) {
         </p>
       ) : null}
 
-      {/* Only while the link can still be paid. Offering it on an expired or failed attempt
-          invites a click that goes nowhere. */}
       {payment.short_url && payment.status === "pending" ? (
         <a
           href={payment.short_url}
@@ -336,11 +288,6 @@ function PaymentRow({ payment }: { payment: BuyerPayment }) {
   );
 }
 
-/**
- * The drawer's label/value rows. Built rather than listed because most of them are optional:
- * an order that has not been paid has no `paid_at`, and a row printed as "—" reads as a fact
- * that is missing rather than one that does not apply yet.
- */
 function facts(order: BuyerOrder) {
   const rows: [string, string][] = [
     ["Amount", rupees(order.amount_paise, order.currency)],

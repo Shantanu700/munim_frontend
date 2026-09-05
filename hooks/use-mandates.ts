@@ -15,15 +15,6 @@ import { describeApiError } from "@/lib/api";
 
 const OFFLINE = "Could not reach the server. Check your connection and try again.";
 
-/**
- * The buyer's whole mandates screen: the list and both mutations.
- *
- * Mirrors hooks/use-policy.ts's conventions — the mount fetch is a `.then` chain (an
- * `await` does not clear `react-hooks/set-state-in-effect`, a `.then` boundary does),
- * mutations are `async` and answer with what actually landed so the caller only reacts
- * to a write that happened, and every mutation re-runs `refresh()` rather than splicing
- * local state.
- */
 export function useMandates() {
   const [mandates, setMandates] = React.useState<Mandate[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -44,11 +35,6 @@ export function useMandates() {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
 
-  /**
-   * Answers with the created row, which is the only response carrying the mandate's
-   * token — `GET /buyer/mandates/` never does, so a caller that discards this return
-   * value has no other way to show it.
-   */
   const create = React.useCallback(
     async (body: MandateWrite): Promise<MandateIssued | null> => {
       setBusy(true);

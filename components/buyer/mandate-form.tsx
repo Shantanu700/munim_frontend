@@ -43,21 +43,11 @@ const EXPIRES = [
 
 const FIELD =
   "flex h-11 items-center gap-2 rounded-full bg-panel-2 px-4 text-body transition-shadow focus-within:ring-3 focus-within:ring-ring/30";
-/* §1 rule 2: the ring only seconds the sentence under the field, which is what actually says
-   what is wrong. `--deny` is deep navy here, not red — §8 prohibits red outright. */
 const FIELD_INVALID = "ring-2 ring-deny/35 focus-within:ring-deny/35";
 const INPUT =
   "min-w-0 flex-1 bg-transparent text-body outline-none placeholder:text-muted-ink";
 const LABEL = "px-1 text-eyebrow uppercase text-muted-ink";
 
-/**
- * One group of fields, separated from the last by §4's card divider (1px `--rule`, 22px
- * either side). Seven controls in one undifferentiated stack gave a spending authority the
- * shape of a contact form; three named groups say what each answer is for.
- *
- * The heading is sentence case on purpose: every field label below it is already an
- * uppercase tracked eyebrow, and two levels of capitals in one card is noise, not hierarchy.
- */
 function Group({
   title,
   first,
@@ -80,11 +70,6 @@ function Group({
   );
 }
 
-/** One call site each for the two other config widgets on the policy screen; this is the
-    third. Rupees, not paise — `MandateWrite`'s caps are rupee strings on the wire.
-
-    `error` takes over the hint slot rather than adding a row beneath it, so a value going
-    invalid never shifts the fields under it. */
 function RupeeField({
   label,
   hint,
@@ -120,32 +105,10 @@ function RupeeField({
   );
 }
 
-/**
- * What every dropdown endpoint is reduced to: the string the wire carries, and the string a
- * human reads. Neither uuid reaches the wire — `domain` and `subject` do.
- *
- * `short` is the closed state's label where the open one needs more. A store's menu row has
- * to print the domain, because two shops can share a business name and the domain is the
- * thing actually being authorised; once one is chosen there is nothing left to tell apart, so
- * the trigger says only the name. Falls back to `label` for the pickers that need no split.
- */
 type Option = { value: string; label: string; short?: string };
 
-/** A store carries its uuid past the picker: `MandateWrite` wants `domain`, but the category
-    roster is addressed by `merchant_uuid`, so the row that answers one has to answer both. */
 type StoreOption = Option & { uuid?: string };
 
-/**
- * Store and agent are the same control over different rows, so they are one component.
- *
- * A `div`, not a `label`: the trigger is a real button, and a button inside a `<label>`
- * fires that label's control on every click — the same reason the Razorpay screen's
- * `Field` associates with `htmlFor`. `aria-label` names it instead.
- *
- * `options` is `null` while the roster is still in flight, which is not the same claim as
- * an empty one: "No stores on Munim yet" printed during the fetch told a buyer the platform
- * was bare when it was only slow.
- */
 function Picker({
   label,
   value,
@@ -196,19 +159,6 @@ function Picker({
   );
 }
 
-/**
- * The store's own categories, as many as the buyer wants, chosen from a checklist and shown
- * back as removable chips.
- *
- * It replaced a comma-separated text input, which asked a buyer to guess the exact spelling a
- * crawler had recorded — a typo there does not fail loudly, it silently narrows the mandate to
- * a category that matches nothing. This roster is the store's own, so there is nothing to
- * guess. It is also why the control is dead until a store is picked: categories belong to one
- * shop's catalogue, not to the platform.
- *
- * The chips are their own buttons rather than living inside the trigger — a button nested in a
- * button is invalid, and each chip has to be individually removable.
- */
 function CategoryPicker({
   options,
   selected,
@@ -237,9 +187,6 @@ function CategoryPicker({
               "w-full cursor-pointer justify-between text-left disabled:cursor-not-allowed disabled:opacity-50"
             )}
           >
-            {/* Three states, and "no store yet" is not one of the other two: `options` is
-                `null` both before a store is picked and while its roster is in flight, so
-                reading it alone printed "Loading…" at a buyer who had nothing loading. */}
             <span className={cn("truncate", selected.length === 0 && "text-muted-ink")}>
               {!storePicked
                 ? "Choose a store first"
@@ -250,15 +197,11 @@ function CategoryPicker({
             <ChevronDown className="size-4 shrink-0 text-muted-ink" />
           </button>
         </DropdownMenuTrigger>
-        {/* At least as wide as the field it drops from, so the checklist reads as part of it,
-            but free to grow for a long category name rather than clipping it. */}
         <DropdownMenuContent className="max-h-72 min-w-(--radix-dropdown-menu-trigger-width) overflow-y-auto">
           {list.map((option) => (
             <DropdownMenuCheckboxItem
               key={option.value}
               checked={selected.includes(option.value)}
-              /* Radix closes the menu on select; a checklist that shuts after one tick makes
-                 choosing three categories three round trips through the trigger. */
               onSelect={(event) => event.preventDefault()}
               onCheckedChange={() => onToggle(option.value)}
             >
@@ -303,8 +246,6 @@ function CategoryPicker({
   );
 }
 
-/** One line of the read-back rail. `value` of `null` is a field the buyer has not answered
-    yet, and says so in words rather than leaving the row blank. */
 function SummaryRow({ term, value }: { term: string; value: string | null }) {
   return (
     <div className="flex items-baseline justify-between gap-4">
@@ -323,21 +264,8 @@ function SummaryRow({ term, value }: { term: string; value: string | null }) {
 
 const money = (digits: string) => `₹${Number(digits).toLocaleString("en-IN")}`;
 
-/** The clock the expiry preview counts from, read at module evaluation rather than in a
-    render body — `Date.now()` during render is an impure call `react-hooks` rejects outright.
-    Each click on an expiry pill re-reads it from the handler, where impure calls are fine, so
-    the figure is exact at the moment a buyer actually chooses the window. */
 const LOADED_AT = Date.now();
 
-/**
- * The create side of the buyer's mandates screen — the reference screenshot's shape,
- * mapped onto `MandateWrite`. `create` is `useMandates().create`, which answers with the
- * created row (carrying the one-time `token`) or `null` on failure.
- *
- * Returns the form *and* the read-back rail as siblings; the screen owns the two-column grid
- * they sit in. `Dialog` is Radix's `Root`, which renders no DOM node of its own, so the grid
- * still sees exactly two children.
- */
 export function MandateForm({
   busy,
   create,
@@ -357,13 +285,6 @@ export function MandateForm({
   const [agents, setAgents] = React.useState<Option[] | null>(null);
   const [catalogue, setCatalogue] = React.useState<Option[] | null>(null);
 
-  /* Both rosters a buyer picks from — a typed domain or agent name was a guess, and a
-     mandate signed for a store that is not on Munim can never be spent. Two requests, not
-     `Promise.all`: either list is usable without the other. `.then`, not `await`, for
-     `react-hooks/set-state-in-effect`. Loud on failure — without these there is nothing to
-     submit. `subject` is the agent's `key` (the slug the gate matches, e.g. `chatgpt`), not
-     its `label` — the label is display only. A failed roster lands as `[]`, not `null`, so
-     the menu stops claiming it is still loading something that will never arrive. */
   React.useEffect(() => {
     const offline = (what: string, set: (options: Option[]) => void) => () => {
       set([]);
@@ -380,9 +301,6 @@ export function MandateForm({
             .filter((store) => store.domain)
             .map((store) => ({
               value: store.domain!,
-              /* Open: both, because two shops can share a business name and the domain is
-                 what is actually being authorised. Closed: the name alone, since by then
-                 there is nothing left to tell apart. */
               label: store.business_name ? `${store.business_name} — ${store.domain}` : store.domain!,
               short: store.business_name || store.domain!,
               uuid: store.uuid,
@@ -401,12 +319,6 @@ export function MandateForm({
       .catch(offline("agents", setAgents));
   }, []);
 
-  /* The chosen store's own categories. Addressed by `merchant_uuid`, which is why `stores`
-     carries a uuid the wire never sees. The clearing setState belongs to the store picker's
-     `onChange` below, not to this effect body — a synchronous setState in an effect is a lint
-     *error* here — so all this does is fill in what that handler emptied. `.then`, same rule.
-     A failure lands as `[]` and says so out loud: a silently empty checklist would read as
-     "this store sells nothing", and blank still means any category, so nothing is blocked. */
   const storeUuid = stores?.find((store) => store.value === domain)?.uuid;
   React.useEffect(() => {
     if (!storeUuid) return;
@@ -415,9 +327,6 @@ export function MandateForm({
       .then(({ data, error }) => {
         if (!live) return;
         setCatalogue(
-          /* `key` is the slug the gate matches, the same split the agent picker makes
-             between `key` and `label`; it is optional on the wire, and a store whose crawl
-             recorded only a name still has to be selectable. */
           (data ?? []).map((category) => ({
             value: category.key || category.name,
             label: category.name,
@@ -435,19 +344,11 @@ export function MandateForm({
     };
   }, [storeUuid]);
 
-  /* The three caps are one ladder — per purchase ≤ total budget ≤ hard ceiling — and each rung
-     is only compared once both it and the one under it carry a figure, since blank is not zero
-     here. A buyer who inverts two of them has built a mandate that can never approve anything,
-     and finding that out from a 400 after submitting is finding it out in the wrong place. */
   const per = Number(perTxnCap);
   const total = Number(totalCap);
   const ceiling = Number(stepUpCeiling);
   const totalError =
     per && total && total < per ? "Must be at least the per-purchase limit." : undefined;
-  /* The ceiling answers to whichever cap below it actually carries a figure: the budget when
-     there is one, the per-purchase limit while there is not. Without that fallback a ceiling
-     under the per-purchase limit would pass unremarked for as long as the budget stayed blank,
-     which is exactly the half-filled form this check exists to catch. */
   const floor = total || per;
   const ceilingError =
     floor && ceiling && ceiling < floor
@@ -456,9 +357,6 @@ export function MandateForm({
         : "Must be at least the per-purchase limit."
       : undefined;
 
-  /* The server stamps the real expiry when it signs, so this is the client's arithmetic on a
-     clock that is a beat behind — "about" rather than a timestamp presented as exact. It is
-     still the only place a buyer sees what "30d" actually means in their own timezone. */
   const [countFrom, setCountFrom] = React.useState(LOADED_AT);
   const lapses = React.useMemo(
     () => moment(new Date(countFrom + ttlHours * 3_600_000).toISOString()),
@@ -501,9 +399,6 @@ export function MandateForm({
 
   return (
     <>
-      {/* `MandateIssued.token` is a bearer credential returned exactly once — same
-          copy-now-or-lose-it treatment CLAUDE.md flags for platform API keys. Dismissing
-          the dialog is the only exit, so the copy sits where the eye already is. */}
       <Dialog open={issued !== null} onOpenChange={(open) => !open && setIssued(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
@@ -545,9 +440,6 @@ export function MandateForm({
               placeholder="Choose a store"
               empty="No stores on Munim yet."
               options={stores}
-              /* Categories belong to the store, so changing the store invalidates both the
-                 roster and anything already ticked from it. Cleared here, in an event
-                 handler, rather than in the effect that refills it. */
               onChange={(value) => {
                 setDomain(value);
                 setCategories([]);
@@ -632,18 +524,11 @@ export function MandateForm({
           />
         </Group>
 
-        {/* "Create mandate" and not "Create authorisation": the rail, the page title and the
-            list all call the thing a mandate, and a button is the wrong place to introduce a
-            second noun for it. */}
         <Button type="submit" disabled={busy} className="mt-6 h-11 w-full">
           {busy ? "Creating…" : "Create mandate"}
         </Button>
       </form>
 
-      {/* §1 rule 5's one dark panel, and it goes to the read-back rather than to the form:
-          this is a spending authority, and the last thing before signing one should be a
-          plain sentence naming what was signed. Derived entirely from the fields beside it —
-          no state of its own, so it cannot drift out of step with them. */}
       <aside className="rounded-xl bg-navy-900 p-6 text-navy-050 shadow-card">
         <PanelHeader title="What you're authorising" />
         <p className="mt-1.5 max-w-none text-body text-navy-200">
@@ -663,8 +548,6 @@ export function MandateForm({
           <SummaryRow term="Total budget" value={totalCap ? money(totalCap) : null} />
           <SummaryRow term="Hard ceiling" value={stepUpCeiling ? money(stepUpCeiling) : null} />
           <SummaryRow term="Lapses" value={`about ${lapses}`} />
-          {/* Names, not the slugs `categories` actually holds — the rail restates what the
-              buyer chose, and they chose "Home & Kitchen", not `home-kitchen`. */}
           <SummaryRow
             term="Categories"
             value={

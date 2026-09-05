@@ -17,24 +17,11 @@ import { ENFORCEMENTS, enforcementOf, ruleSentence, type Enforcement } from "@/l
 import { cn } from "@/lib/utils";
 import type { KindEnum, Rule, RuleWrite } from "@/src/client";
 
-/**
- * S2e, the store policy screen — now live end to end.
- *
- * Every figure comes from `GET /policy/overview/` and `GET /policy/policies/{uuid}/`, and
- * every control writes. What used to be the screen's whole point — that a policy editor you
- * cannot poke is not worth building — is no longer a concession: edits are held locally only
- * until Save, which is a deliberate choice about a money control, not a missing endpoint.
- *
- * The rules panel renders itself from each rule's own `config_fields` rather than hardcoding
- * a panel per kind, which is what the backend built that descriptor for.
- */
 export default function PolicyPage() {
   const { overview, detail, history, loading, busy, uuid, select, saveRules, create, setActive, remove } =
     usePolicy();
   const [naming, setNaming] = React.useState(false);
 
-  // Nothing until we know, matching the dashboard layout: a skeleton of a safety screen
-  // that then rearranges is worse than a beat of nothing.
   if (loading) return null;
 
   if (!overview) {
@@ -86,17 +73,12 @@ export default function PolicyPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-panel">
-            {/* Nothing at all for the policy already in force: the line above names it, and
-                a disabled button or a chip would only be the same fact twice. */}
             {selected && selected.uuid !== activePolicy ? (
               <Button
                 className="h-10 px-4.5"
                 disabled={busy}
                 onClick={() => selected.uuid && setActive(selected.uuid, true)}
               >
-                {/* Not "Put {name} in force" — the name is already on the lit card below and
-                    on the line to the left, and it stretched this button past the other two
-                    for every policy with a long name. */}
                 Put in force
               </Button>
             ) : null}
@@ -132,10 +114,6 @@ export default function PolicyPage() {
             store will accept — until then, no store rules apply to agent purchases.
           </p>
         ) : (
-          /* One row that scrolls rather than a wrapping grid: the cards are a single choice,
-             and a second row of them reads as a second group. `flex-1` past `min-w-60` means
-             they fill the panel first and only scroll once they cannot, and snap points make
-             the card the scroll clips look deliberate rather than cut off. */
           <div className="mt-4 flex snap-x snap-mandatory gap-panel overflow-x-auto pb-1">
             {policies.map((p) => {
               const current = p.uuid === uuid;
@@ -150,9 +128,7 @@ export default function PolicyPage() {
                     current ? "bg-navy-900 text-navy-050" : "bg-panel-2 hover:bg-track/60"
                   )}
                 >
-                  {/* items-start, not center: a long policy name wraps to two lines. */}
                   <span className="flex min-w-0 items-start gap-3">
-                    {/* Decoration: `aria-pressed` above already carries the state. */}
                     <span
                       aria-hidden
                       className={cn(
@@ -165,9 +141,6 @@ export default function PolicyPage() {
                     <span className="text-card-title">{p.name}</span>
                   </span>
 
-                  {/* How much of the policy is live, which is the one thing worth knowing
-                      before opening it. `on_breach` is not summarised in the list payload —
-                      by design, so the screen cannot need a detail call per card. */}
                   <span
                     className={cn(
                       "mt-auto text-meta tabular-nums",
@@ -184,10 +157,6 @@ export default function PolicyPage() {
         )}
       </Panel>
 
-      {/* Keyed on the policy, so switching one remounts the editor and that remount is what
-          discards edits to the last one — the same trick as `ProductDialog`, and for the
-          same reason: a reset effect would be a synchronous setState in an effect body,
-          which is a lint *error* in this repo. */}
       {uuid && detail ? (
         <PolicyEditor
           key={detail.uuid}
@@ -217,7 +186,6 @@ function PageHeading() {
   );
 }
 
-/** One field, one Save. A Dialog would spend a header, a title and a footer on the same input. */
 function NewPolicyForm({
   busy,
   onCreate,
@@ -277,16 +245,6 @@ function PolicyEditor({
   onSave: ReturnType<typeof usePolicy>["saveRules"];
   onDelete: ReturnType<typeof usePolicy>["remove"];
 }) {
-  /**
-   * The edits, as the partial bodies they will be sent as — not a copy of the rules with a
-   * baseline to diff against.
-   *
-   * `RuleWrite` is partial by design ("flipping a toggle must not require the client to echo
-   * back a config it would then be able to clobber"), so holding the patch *is* holding the
-   * request. It also means a field the merchant never touched is never sent, which matters:
-   * a stored ceiling of ₹123.45 shows as ₹123, and re-sending every field would quietly
-   * round it down.
-   */
   const [pending, setPending] = React.useState<Partial<Record<KindEnum, RuleWrite>>>({});
   const [confirming, setConfirming] = React.useState(false);
   const edits = Object.keys(pending).length;
@@ -294,16 +252,10 @@ function PolicyEditor({
   const rules = detail.rules.map((rule) => ({ ...rule, ...pending[rule.kind] }) as Rule);
   const count = (...of: Enforcement[]) => rules.filter((r) => of.includes(enforcementOf(r))).length;
 
-  /** Merge a patch, then drop anything that now equals what the server already holds. */
   function patch(server: Rule, next: RuleWrite) {
     setPending((current) => {
       const merged: RuleWrite = { ...current[server.kind], ...next };
-      // Off carries no `on_breach`, and an explicit `undefined` is still an own key —
-      // enough to make an entry that changes nothing count as an unsaved edit.
       if (merged.on_breach === undefined) delete merged.on_breach;
-      // Compared as the pill the merchant sees, not as raw `state`: a rule the backend
-      // seeded reads `draft` while Off is lit, so writing `off` over it would be a real
-      // transition with a ledger entry behind it — for a click that changed nothing.
       if (merged.state !== undefined && enforcementOf(merged) === enforcementOf(server)) {
         delete merged.state;
         delete merged.on_breach;
@@ -321,8 +273,6 @@ function PolicyEditor({
   async function save() {
     if (!detail.uuid) return;
     const landed = await onSave(detail.uuid, Object.entries(pending) as [KindEnum, RuleWrite][]);
-    // Only what actually stored. A failure part-way leaves the rest pending and the counter
-    // honest about how much is still unsaved.
     setPending((current) => {
       const rest = { ...current };
       for (const kind of landed) delete rest[kind];
@@ -331,12 +281,6 @@ function PolicyEditor({
   }
 
   return (
-    /* At xl the editor fills what the heading and the chooser leave of the viewport and each
-       panel scrolls inside itself, so the page never grows past one screen. `min-h-0` is
-       xl-only for the same reason as the products screen: this grid is a flex item in the
-       layout's `overflow-y-auto` column, and below xl a bare `min-h-0` would let it shrink
-       to the scroller's height and squeeze its rows out over the panel beneath. Below xl the
-       two lists keep a `max-h` instead and the shell scrolls. */
     <div className="grid gap-panel lg:grid-cols-[minmax(0,1fr)_340px] xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_420px]">
       <Panel className="flex flex-col xl:min-h-0">
         <div className="flex shrink-0 flex-wrap items-start justify-between gap-x-6 gap-y-1">
@@ -354,8 +298,6 @@ function PolicyEditor({
           </span>
         </div>
 
-        {/* Eight rule cards are far taller than a screen, so the list — not the page — is
-            what scrolls. `pr-1` keeps the scrollbar off the cards' right edge. */}
         <div className="mt-4 grid max-h-160 gap-panel overflow-y-auto pr-1 xl:max-h-none xl:min-h-0 xl:flex-1">
           {detail.rules.map((server, i) => (
             <RuleCard
@@ -407,8 +349,6 @@ function PolicyEditor({
           {edits ? `${edits} unsaved ${edits === 1 ? "edit" : "edits"}.` : "No unsaved edits."}
         </p>
 
-        {/* gap-2.5, not gap-panel: three buttons at the panel's 420px need the room, and
-            `px-4` keeps each one to its label. */}
         <div className="mt-2.5 flex shrink-0 flex-wrap gap-2.5">
           <Button className="h-11 px-4" disabled={!edits || busy} onClick={save}>
             Save policy
@@ -421,10 +361,6 @@ function PolicyEditor({
           >
             Discard edits
           </Button>
-          {/* Beside the other two rather than in a footer of its own, and asked in place:
-              a popover over the button that armed it, the same pattern as ProductDialog's
-              delete and the kill switch. Real red, which is what `RED_TINT` is for —
-              `variant="destructive"` alone is navy here. */}
           <Popover open={confirming} onOpenChange={setConfirming}>
             <PopoverTrigger asChild>
               <Button
@@ -459,22 +395,15 @@ function PolicyEditor({
           </Popover>
         </div>
 
-        {/* The footer's sentence, kept: with the button disabled its popover never opens, so
-            this is the only place the merchant learns why. */}
         <p className="mt-2.5 shrink-0 text-meta text-muted-ink">
           {isActive
             ? "A policy in force cannot be deleted. Put another one in force first."
             : "Deleting a policy leaves a ledger entry behind it."}
         </p>
 
-        {/* The provenance line the mock hardcoded, from the ledger this time. `updated_at`
-            would be wrong: every write in the backend's services goes through `.update()`,
-            which does not run `auto_now`, so that column never moves after creation. */}
         <div className="mt-3.5 flex flex-col xl:min-h-0 xl:flex-1">
           <span className="shrink-0 text-eyebrow uppercase text-muted-ink">recent changes</span>
           {history.length ? (
-            /* The one part of this panel that grows without bound, so it is the part that
-               scrolls — the counts and the buttons above it stay put. */
             <ul className="mt-2 grid max-h-60 gap-1.5 overflow-y-auto xl:max-h-none xl:min-h-0 xl:flex-1">
               {history.map((entry) => (
                 <li key={entry.seq} className="flex items-baseline justify-between gap-3 text-meta">
@@ -500,12 +429,6 @@ function PolicyEditor({
   );
 }
 
-/**
- * The shape of one entry in `Rule.config_fields`, which `types.gen.ts` types as an untyped
- * dict. Declared by hand and cast once at the boundary, the same way `use-ingest.ts` declares
- * the SSE payload the stream's `text/event-stream` body hides. Built by the backend's
- * `serializers.config_fields()` from the per-kind config serializer.
- */
 type ConfigField = {
   name: string;
   type: string;
@@ -517,18 +440,6 @@ type ConfigField = {
   max_value?: number;
 };
 
-/**
- * How a stored value is shown and typed back, keyed by field *name*.
- *
- * This is the one thing standing between this screen and the backend's promise that "adding
- * a rule to the registry does not need a frontend release" — the descriptor says
- * `integer, min 1, nullable`, it does not say *paise*. A kind this map has never seen still
- * renders and still writes; it just shows a raw number in storage units rather than ₹ or %.
- * That degrades, which is the point; it does not break.
- *
- * `toDisplay` always lands on a whole number, because the input strips non-digits. A stored
- * ₹123.45 therefore shows as ₹123 — harmless, since an untouched field is never re-sent.
- */
 const UNITS: Record<
   string,
   { toDisplay: (stored: number) => number; toStore: (shown: number) => number; money?: boolean; suffix?: string }
@@ -540,14 +451,8 @@ const UNITS: Record<
 
 const IDENTITY = { toDisplay: (v: number) => v, toStore: (n: number) => n };
 
-/** `amount_paise` → "amount", `required_fields` → "required fields". */
 const humanise = (name: string) => name.replace(/_(paise|bps)$/, "").replace(/_/g, " ");
 
-/**
- * The rule's setting as a phrase, for the sentence underneath it. An empty string means
- * "nothing is configured", which every kind can be and which `ruleSentence` reports as a
- * rule that stops nothing.
- */
 function configText(rule: Rule, currency: string): string {
   const config = (rule.config ?? {}) as Record<string, unknown>;
   const field = (rule.config_fields as unknown as ConfigField[])[0];
@@ -556,9 +461,6 @@ function configText(rule: Rule, currency: string): string {
 
   if (field.type === "list") {
     const items = Array.isArray(value) ? value.map(String).filter(Boolean) : [];
-    // An empty list means "require nothing" / "name nobody", and the sentence says the rule
-    // stops nothing — which is true of `required_fields` only since the backend stopped
-    // reading `[] or DEFAULT_REQUIRED_FIELDS` and handing back the full default set.
     return items.length ? items.map(humanise).join(", ") : "";
   }
 
@@ -569,14 +471,6 @@ function configText(rule: Rule, currency: string): string {
   return `${shown.toLocaleString("en-IN")}${unit?.suffix ?? ""}`;
 }
 
-/**
- * One rule: its settings, what happens on a breach, and the sentence those two produce.
- *
- * The value field is a text input, not `type="number"` — the figures are rupee amounts and
- * ₹1,50,000 without its grouping is unreadable at a glance, which is the whole point of a
- * ceiling you are about to change. Digits are stripped on the way in, so the state stays a
- * number and the grouping is only ever a rendering.
- */
 function RuleCard({
   index,
   rule,
@@ -624,8 +518,6 @@ function RuleCard({
 
         <div className="grid gap-1.5">
           <span className="px-1 text-eyebrow uppercase text-muted-ink">enforcement</span>
-          {/* bg-panel over the row's --panel-2, which is what lifts the group off the card
-              the way the design draws it. */}
           <div className="flex flex-wrap gap-1 rounded-full bg-panel p-1">
             {ENFORCEMENTS.map(({ key, label }) => (
               <button
@@ -649,10 +541,6 @@ function RuleCard({
         {ruleSentence(rule, configText(rule, currency))}
       </p>
 
-      {/* Two things the merchant cannot otherwise see. A rule whose stored config will not
-          validate reads as enforcing and refuses nothing — the engine fails it open, and the
-          only other trace is a server log. No colour: DESIGN.md keeps --step for verdicts,
-          and colour never carries meaning on its own here. */}
       {rule.config_valid === false ? (
         <p className="mt-1.5 max-w-none text-meta text-muted-ink">
           Not enforceable as saved — this rule is being skipped. Set its value again to repair it.
@@ -669,7 +557,6 @@ function RuleCard({
   );
 }
 
-/** The three widgets every `config_fields` descriptor reduces to. */
 function ConfigInput({
   field,
   value,
@@ -685,7 +572,6 @@ function ConfigInput({
 }) {
   const label = humanise(field.name);
 
-  // A fixed set of options: pills, multi-select, matching the enforcement control beside them.
   if (field.type === "list" && field.choices?.length) {
     const chosen = Array.isArray(value) ? value.map(String) : [];
     return (
@@ -716,8 +602,6 @@ function ConfigInput({
     );
   }
 
-  // A free list: one field, comma separated. The child rejects blanks, so the filter is
-  // required rather than tidy.
   if (field.type === "list") {
     const items = Array.isArray(value) ? value.map(String) : [];
     return (
@@ -759,13 +643,10 @@ function ConfigInput({
         <input
           inputMode="numeric"
           value={stored === null ? "" : unit.toDisplay(stored).toLocaleString("en-IN")}
-          // Blank is not zero. A nullable cap left empty means "no limit"; a zero would
-          // refuse every order in the store, and the backend says so twice.
           placeholder={field.allow_null ? "no limit" : "0"}
           onChange={(event) => {
             const digits = event.target.value.replace(/\D/g, "");
             if (!digits) return onChange(field.allow_null ? null : (field.min_value ?? 0));
-            // Clamp in storage units, after conversion — the bounds are expressed there.
             let next = unit.toStore(Number(digits));
             if (field.min_value !== undefined) next = Math.max(field.min_value, next);
             if (field.max_value !== undefined) next = Math.min(field.max_value, next);
@@ -782,7 +663,6 @@ function ConfigInput({
   );
 }
 
-/** The ledger's own words for a policy change, in the merchant's terms. */
 function summarise(reasonCode: string, detail: Record<string, unknown>): string {
   const name = typeof detail.name === "string" ? detail.name : "";
   const ruleLabel =

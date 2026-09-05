@@ -32,23 +32,9 @@ import {
 
 const OFFLINE = "Could not reach the server. Check your connection and try again.";
 
-/** ScanPanel's field skin, so the two forms on this screen are visibly the same control. */
 const INPUT =
   "h-11 w-full min-w-0 rounded-full bg-panel-2 px-5 text-body outline-none focus-visible:ring-3 focus-visible:ring-ring/30";
 
-/**
- * Add or edit one product. One form for both: the fields are identical, and a merchant
- * typing a row by hand is doing the same job as one correcting a row the ingest read badly.
- *
- * Mount it keyed on the product (`key={uuid ?? "new"}`) and only while it is open — the
- * remount is what resets the form, the fetched detail and an armed delete, so nothing here
- * needs a synchronous state reset in an effect.
- *
- * Editing fetches `GET /ingest/products/{uuid}` first. The catalogue row cannot prefill this
- * form on its own: `url`, `is_visible_to_agents` and `in_stock`'s exact tri-state live only
- * on `ProductDetail`, and a form that silently posted defaults for the three fields it could
- * not see would quietly clear them.
- */
 export function ProductDialog({
   uuid,
   onClose,
@@ -56,7 +42,6 @@ export function ProductDialog({
   onUpdate,
   onDelete,
 }: {
-  /** `null` to add a product, a uuid to edit that one. */
   uuid: string | null;
   onClose: () => void;
   onCreate: (body: ProductWrite) => Promise<boolean>;
@@ -97,13 +82,9 @@ export function ProductDialog({
     const body: ProductWrite = {
       url: text("url"),
       title: text("title"),
-      // Rupees in, paise stored. The round is load-bearing, not defensive tidying:
-      // `4200.1 * 100` is 420010.00000000006, and the API column is an integer.
       price_paise: Math.round(Number(form.get("price") || 0) * 100),
       sku: text("sku"),
       currency: text("currency") || "INR",
-      // Three-valued, and the blank option is a real answer: `null` means the listing
-      // publishes no availability, which is not the same claim as "out of stock".
       in_stock: stock === "" ? null : stock === "true",
       image_url: text("image_url"),
       is_visible_to_agents: form.get("is_visible_to_agents") === "on",
@@ -132,9 +113,6 @@ export function ProductDialog({
       }}
     >
       <DrawerContent className="data-[vaul-drawer-direction=right]:sm:max-w-lg">
-        {/* `DrawerContent` pads 6px, not 24px — its surface floats inset from the viewport —
-            so each of the three sections carries its own p-6, and the middle one owns the
-            scroll so the footer's buttons stay reachable on a short screen. */}
         <div className="flex min-h-0 flex-1 flex-col">
           <DrawerHeader className="gap-0 p-6 pb-0">
             <DrawerTitle className="text-card-title">
@@ -142,8 +120,6 @@ export function ProductDialog({
             </DrawerTitle>
             <DrawerDescription className="mt-1 text-meta text-muted-ink">
               {detail?.url ? (
-                // The row itself is a button, so this is where the storefront link lives —
-                // a link inside that button would be invalid markup and unreachable anyway.
                 <a href={detail.url} target="_blank" rel="noreferrer noopener">
                   Open on your storefront <ExternalLinkIcon className="inline size-3.5" />
                 </a>
@@ -194,8 +170,6 @@ export function ProductDialog({
                 </Field>
 
                 <Field label="Availability">
-                  {/* Native select: three options on one screen, and a shadcn Select would be a
-                      new primitive for this one control. */}
                   <select
                     name="in_stock"
                     defaultValue={detail?.in_stock === undefined || detail?.in_stock === null ? "" : String(detail.in_stock)}
@@ -237,10 +211,6 @@ export function ProductDialog({
             {uuid === null ? (
               <span />
             ) : (
-              // A popover, not a second drawer: it asks in place, over the button that armed
-              // it, and needs no overlay stacked on this one. vaul is Radix Dialog underneath,
-              // so the popover registers as a nested layer the same way it did in the dialog —
-              // Escape closes the question and leaves the editor open.
               <Popover open={confirming} onOpenChange={setConfirming}>
                 <PopoverTrigger asChild>
                   <Button

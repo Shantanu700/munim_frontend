@@ -36,9 +36,6 @@ export function NavUser({
   const router = useRouter()
 
   async function logOut() {
-    // The session is a cookie on the API origin, so only the API can clear it. Redirect
-    // either way — a failed logout still means we should not keep showing the shell — but
-    // say so, because the session may well still be live on the server.
     const { error } = await deleteCoreLogin().catch(() => ({ error: true as const }))
     if (error) toast.warning("We could not reach the server to end your session.")
     else toast.success("Signed out.")

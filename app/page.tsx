@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 
 import { Landing } from "@/components/landing";
 
-// The marketing page. `/dashboard` is the signed-in surface and bounces to `/auth` on its
-// own, so both CTAs here point at `/auth` — it carries the login/register toggle itself.
 export const metadata: Metadata = {
   title: "Munim — let AI agents buy from your store, safely",
   description:

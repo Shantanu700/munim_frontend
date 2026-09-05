@@ -11,10 +11,8 @@ import { describeApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { getAuditEntries, type LedgerEntry } from "@/src/client";
 
-/** Shared column template so the gate rows line up with nothing above them by accident. */
 const GATE_COLUMNS = "grid-cols-[124px_1fr_118px_300px_92px]";
 
-/** A preview, not the table. The ledger screen is one click away and pages properly. */
 const PREVIEW = 5;
 
 const TALLIES = [
@@ -23,37 +21,17 @@ const TALLIES = [
   { decision: "DENY", label: "deny", className: "bg-deny-tint text-deny" },
 ] as const;
 
-/**
- * Overview's gate section: the newest decisions and the running tally by verdict.
- *
- * A client island rather than part of `overview.tsx`, which stays a server component — the
- * `sessionid` cookie belongs to the API origin, so nothing rendered on the server can ask
- * the ledger anything.
- *
- * The counts are all-time and cannot be otherwise: `/audit/entries` takes no date filter, and
- * `GET /policy/overview/`'s tiles carry only `refused_30d` / `step_ups_30d` — no ALLOW count,
- * and the wrong window. So this panel does not claim a period, and the three tallies are
- * printed as three facts rather than as a breakdown of a total they cannot sum to: `CONFIG`
- * entries (policy edits, credential writes) are on the same chain.
- */
 export function GatePanel() {
   const [rows, setRows] = React.useState<LedgerEntry[]>([]);
   const [tallies, setTallies] = React.useState<Record<string, number>>({});
 
   React.useEffect(() => {
-    // ponytail: four reads for three counts, because no aggregate endpoint exists — a
-    // `page_size: 1` response is fetched purely for its `count`. Collapse to one call if the
-    // backend ever adds decision totals to a summary response. `Promise.all` is safe here
-    // where the policy screen's rule writes are sequential: these are all reads, and it is
-    // *writes* that queue on `LedgerEntry.append`'s row lock.
     Promise.all([
       getAuditEntries({ query: { page_size: PREVIEW } }),
       ...TALLIES.map((t) => getAuditEntries({ query: { page_size: 1, decision: t.decision } })),
     ])
       .then(([newest, ...counts]) => {
         if (!newest.data) {
-          // A buyer, or a merchant row that was never created. The panel renders its empty
-          // line; the view's own sentence says why better than this could.
           toast.error(describeApiError(newest.error));
           return;
         }
@@ -64,8 +42,6 @@ export function GatePanel() {
           )
         );
       })
-      // Silent: the tiles and charts above this arrived, and a failing preview must not
-      // announce itself over a screen whose real content loaded.
       .catch(() => {});
   }, []);
 
@@ -96,8 +72,6 @@ export function GatePanel() {
         </div>
       </div>
 
-      {/* The reason column is fixed-width by design (§7 is desktop-first at 1440), so
-          below that the list scrolls rather than crushing the panel around it. */}
       <div className="mt-4.5 overflow-x-auto">
         <div className="grid min-w-220 gap-2.5">
           {rows.map((row) => (
@@ -106,8 +80,6 @@ export function GatePanel() {
               <div>
                 <div className="text-body">{row.action.replace(/_/g, " ")}</div>
                 <div className="mt-0.5 text-meta text-muted-ink">
-                  {/* `callerOf` is blank for a merchant action, which is most of the chain,
-                      so the separator goes with it rather than leading the line. */}
                   {[callerOf(row), moment(row.at)].filter(Boolean).join(" · ")}
                 </div>
               </div>
@@ -116,8 +88,6 @@ export function GatePanel() {
               </div>
               <div>
                 <div className="text-meta font-medium tracking-[0.03em]">{row.reason_code}</div>
-                {/* Only the gate's own verdicts carry a sentence; `describe()` answers "" for
-                    every other code, and an empty div would still take its margin. */}
                 {row.reason_description ? (
                   <div className="mt-0.5 max-w-none text-meta text-muted-ink">
                     {row.reason_description}

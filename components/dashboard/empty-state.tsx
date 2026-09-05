@@ -2,11 +2,6 @@ import * as React from "react";
 
 import { Panel } from "@/components/dashboard/parts";
 
-/**
- * The S2b layout: one wide panel of copy beside a fixed 380px navy rail (DESIGN.md §7).
- * Both dashboard empties use it — the merchant who has not entered store details, and the
- * merchant whose gate is armed but has seen no agent yet.
- */
 export function EmptyState({
   eyebrow,
   headline,
@@ -33,7 +28,6 @@ export function EmptyState({
   );
 }
 
-/** Eyebrow + body inside the navy rail. Transparency over dark panels only (§1 rule 6). */
 export function EmptyRail({
   eyebrow,
   children,

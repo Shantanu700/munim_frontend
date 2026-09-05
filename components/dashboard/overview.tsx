@@ -22,19 +22,10 @@ import { useOrdersPreview } from "@/hooks/use-orders";
 import { bars, DONUT_CIRCUMFERENCE, linePoints, REQUIRED_DETAILS } from "@/lib/dashboard-data";
 import { cn } from "@/lib/utils";
 
-// 132px, not 96: the status pill spells out "Awaiting approval" rather than printing the
-// raw key, and it is the same pill the orders screen uses.
 const ORDER_COLUMNS = "grid-cols-[1fr_92px_132px_84px]";
 
 const BAR_COLORS = ["bg-bar-1", "bg-bar-2", "bg-bar-3"];
 
-/**
- * The Orders tile's second line, off `counts.by_status`.
- *
- * Every key is optional — the map holds only statuses the store has actually produced — so a
- * missing one is 0, and the segments that are 0 are dropped rather than printed. "0 need
- * attention" is a line that makes a merchant look for something that is not there.
- */
 function breakdown(byStatus: Record<string, number>) {
   return (
     [
@@ -48,26 +39,14 @@ function breakdown(byStatus: Record<string, number>) {
     .join(" · ");
 }
 
-/** "17 Aug" — an ISO day string, the way `RevenuePoint.day` arrives, without a clock time. */
 function dayLabel(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
-/**
- * The merchant Overview. Fully live: `useDashboard()` reads `GET /dashboard/` and
- * `GET /dashboard/products/rows` in one round trip, and `useOrdersPreview()` (shared with the
- * orders screen's rail badge) covers the Orders tile and panel — kept separate because
- * `Dashboard.orders` is untyped on the wire, unlike `GET /orders/counts`.
- *
- * A client component, and it has to be: the `sessionid` cookie belongs to the API origin, so
- * nothing rendered on the server can ask either endpoint anything.
- */
 export function Overview() {
   const { rows, total, counts, loading: ordersLoading } = useOrdersPreview();
   const { dashboard, productRows, loading: dashboardLoading } = useDashboard();
 
-  // Nothing until both are known. Guessing either for one paint would flash the wrong
-  // figures at every merchant — the layout above already does the same for auth.
   if (ordersLoading || dashboardLoading || !dashboard) return null;
 
   const { payments, revenue, catalog_reads: catalogReads, products, policy } = dashboard;
@@ -81,8 +60,6 @@ export function Overview() {
     new Set([0, Math.round((revenue.series.length - 1) / 3), Math.round((2 * (revenue.series.length - 1)) / 3), revenue.series.length - 1])
   );
 
-  // No longer a fixture: this is what the S2b empty state always meant — the gate is armed
-  // and no agent has bought anything yet.
   const live = (total ?? 0) > 0;
 
   return (
@@ -109,16 +86,12 @@ export function Overview() {
           value={rupees(payments.all_time.amount_paise, payments.currency)}
           note={payments.settlement.label}
         />
-        {/* The same `GET /orders/counts` the orders screen's tabs are drawn from, so this
-            tile and the screen it links to cannot disagree about how many orders exist. */}
         <StatTile
           label="Orders received"
           value={counts ? counts.orders_total : "0"}
           note={
             counts && live
-              ? // Blank only if every order is in a status this build does not know about,
-                // which the map's open shape allows. Then the total is all there is to say.
-                breakdown(counts.by_status) || `${counts.orders_total} in total`
+              ? breakdown(counts.by_status) || `${counts.orders_total} in total`
               : "Nothing yet"
           }
         />
@@ -158,7 +131,6 @@ export function Overview() {
         />
       ) : (
         <>
-          {/* Same 4-column grid as the tiles above (§4 rule 4). */}
           <div className="grid gap-panel xl:grid-cols-4">
             <Panel className="xl:col-span-2">
               <PanelHeader title="Revenue from agent purchases" meta={`last ${revenue.window.days} days`} />
@@ -267,7 +239,6 @@ export function Overview() {
             </Panel>
           </div>
 
-          {/* Live, from the audit ledger — hence a client island. */}
           <GatePanel />
 
           <div className="grid gap-panel xl:grid-cols-2">
@@ -300,7 +271,6 @@ export function Overview() {
                     <div>
                       <OrderStatusPill status={o.status} />
                     </div>
-                    {/* Self-declared, like everywhere else it is printed. */}
                     <div className="truncate text-meta text-muted-ink">
                       {o.agent_label || "not stated"}
                     </div>

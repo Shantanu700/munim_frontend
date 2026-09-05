@@ -15,11 +15,6 @@ import {
 import { cn } from "@/lib/utils";
 import type { Mandate } from "@/src/client";
 
-/**
- * `state` is `revoked / expired / pending / live`, one word, derived by the backend —
- * not `VerdictPill`'s ALLOW/STEP_UP/DENY, a different domain entirely. §1 rule 2 still
- * applies: colour never carries the meaning alone, the word does.
- */
 const STATE: Record<string, { label: string; className: string }> = {
   live: { label: "Live", className: "bg-allow-tint text-allow" },
   pending: { label: "Pending", className: "bg-step-tint text-step" },
@@ -36,7 +31,6 @@ function StatePill({ state }: { state: string }) {
   );
 }
 
-/** `Mandate.store` is an untyped blob on the wire; read its domain defensively. */
 function domainOf(mandate: Mandate): string {
   const domain = mandate.store.domain;
   return typeof domain === "string" && domain ? domain : "a store";
@@ -53,8 +47,6 @@ function RevokeButton({
 }) {
   const [open, setOpen] = React.useState(false);
 
-  // Same split as the kill-switch's confirm: this closes the popover, `useMandates` owns
-  // the request and its own toast.
   async function confirm() {
     await revoke(mandate.uuid);
     setOpen(false);
@@ -106,8 +98,6 @@ export function MandateList({
         {loading ? (
           <p className="text-body text-muted-ink">Loading…</p>
         ) : mandates.length === 0 ? (
-          /* No second button here: the header's "Create mandate" is a few rows up and both
-             would be on screen at once, so the copy names it rather than repeating it. */
           <p className="text-body text-muted-ink">
             Nothing authorised yet. Create a mandate to let an assistant buy on your behalf,
             inside limits you set.

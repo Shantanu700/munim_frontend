@@ -14,18 +14,6 @@ import { describeApiError } from "@/lib/api";
 
 const OFFLINE = "Could not reach the server. Check your connection and try again.";
 
-/**
- * The buyer's platform API keys: the list and both mutations.
- *
- * Same conventions as hooks/use-mandates.ts — the mount fetch is a `.then` chain (an `await`
- * does not clear `react-hooks/set-state-in-effect`, a `.then` boundary does), mutations are
- * `async` and answer with what actually landed so the caller only reacts to a write that
- * happened, and every mutation re-runs `refresh()` rather than splicing local state.
- *
- * `GET /core/api-keys/` answers with a bare array, not the `{count, next, previous, results}`
- * wrapper the orders/products/ledger lists use — so there is nothing to page and no `total`
- * to carry forward.
- */
 export function useApiKeys() {
   const [keys, setKeys] = React.useState<PlatformApiKey[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -46,11 +34,6 @@ export function useApiKeys() {
     refresh().finally(() => setLoading(false));
   }, [refresh]);
 
-  /**
-   * Answers with the created row, which is the only response carrying the raw key — only its
-   * hash is stored, so `GET /core/api-keys/` can never show it again and a caller that
-   * discards this return value has thrown the key away.
-   */
   const create = React.useCallback(
     async (name: string): Promise<PlatformApiKeyIssued | null> => {
       setBusy(true);
@@ -73,11 +56,6 @@ export function useApiKeys() {
     [refresh]
   );
 
-  /**
-   * Branches on `error`, not on `!data` like `useMandates.revoke` — `deleteCoreApiKeys` has no
-   * generated success type at all, so `data` types as `unknown` and is legitimately
-   * `undefined` on an empty 204. `error` is the only reliable signal here.
-   */
   const revoke = React.useCallback(
     async (uuid: string) => {
       setBusy(true);

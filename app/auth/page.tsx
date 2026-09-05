@@ -17,10 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-/**
- * The three Google Identity Services calls this page makes. @types/google.one-tap exists
- * but is not worth a dependency for one object.
- */
 declare global {
   interface Window {
     google?: {
@@ -51,10 +47,8 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 type Role = "merchant" | "buyer";
 type Mode = "login" | "register";
 
-/** UserRoleEnum from the API schema: 1 Admin, 2 Merchant, 3 Buyer. */
 const USER_ROLE: Record<Role, 2 | 3> = { merchant: 2, buyer: 3 };
 
-/** Copy is lifted verbatim from the design's renderVals() so the two stay comparable. */
 const COPY = {
   merchant: {
     word: "Merchant",
@@ -101,29 +95,16 @@ const COPY = {
   },
 } satisfies Record<Role, unknown>;
 
-/** Every fetch here fails the same way, so the copy for it lives in one place. */
 const OFFLINE = "Could not reach the server. Check your connection and try again.";
 
-/**
- * Where a signed-in user lands. `user_role` comes back on every login-shaped response
- * (`postCoreLogin`, `postCoreRegister`→login, `postCoreGoogle`, `getCoreLogin`), so this
- * reads the server's own answer rather than the form's `role` radio — Google sign-in has
- * no radio to read from, and only the server knows what a returning account actually is.
- */
 function destinationFor(role?: UserRoleEnum) {
   return role === USER_ROLE.buyer ? "/buyer" : "/dashboard";
 }
 
 const EYEBROW = "text-eyebrow uppercase text-muted-ink";
 const FIELD = "mt-2 h-auto rounded-md bg-panel-2 px-4 py-3.5 text-body md:text-body";
-/** Two field rows in both modes, so the panel height never depends on the mode. */
 const FIELD_ROW = "grid gap-[14px] sm:grid-cols-2";
 
-/**
- * Label row + control. The header carries `text-meta min-h-[1lh]` so its height comes
- * from the row's own line-height rather than from whatever is in `aside` — that is what
- * lets "Forgot password?" appear in login only without resizing the field.
- */
 function FieldShell({
   label,
   htmlFor,
@@ -162,7 +143,6 @@ export default function AuthPage() {
   const isRegister = mode === "register";
   const lowerWord = copy.word.toLowerCase();
 
-  /** Switching role or mode invalidates whatever the last attempt complained about. */
   function reset<T>(setter: (value: T) => void) {
     return (value: T) => {
       toast.dismiss();
@@ -171,8 +151,6 @@ export default function AuthPage() {
     };
   }
 
-  // Already signed in? Skip the form. This is also what makes the /dashboard guard's
-  // redirect here non-circular: it only sends people back when the session is really gone.
   React.useEffect(() => {
     let active = true;
     getCoreLogin()
@@ -183,7 +161,6 @@ export default function AuthPage() {
     };
   }, [router]);
 
-  /** GIS hands back a JWT in `credential`; that is the `id_token` /core/google/ wants. */
   function initGoogle() {
     if (!GOOGLE_CLIENT_ID || !googleRef.current || !window.google) return;
     window.google.accounts.id.initialize({
@@ -203,7 +180,6 @@ export default function AuthPage() {
         }
       },
     });
-    // 400 is GIS's maximum; it replaces the node's contents, so a second call is harmless.
     window.google.accounts.id.renderButton(googleRef.current, {
       theme: "outline",
       shape: "pill",
@@ -228,13 +204,9 @@ export default function AuthPage() {
 
     setMismatch(false);
     setPending(true);
-    // One toast id for the whole attempt: register → login is two requests but one story,
-    // so the second stage updates the first toast instead of stacking a new one.
     const id = toast.loading(isRegister ? "Creating your account…" : "Signing you in…");
     try {
       if (isRegister) {
-        // `username` is required by AbstractUser but unused for auth (USERNAME_FIELD is
-        // email), so it carries the email to satisfy its uniqueness.
         const { error: apiError } = await postCoreRegister({
           body: {
             username: email,
@@ -248,8 +220,6 @@ export default function AuthPage() {
         toast.loading("Account created. Signing you in…", { id });
       }
 
-      // Register returns the account, not a session, so both modes log in here — otherwise
-      // a freshly registered user would be bounced straight back by the /dashboard guard.
       const { data: session, error: loginError } = await postCoreLogin({
         headers: { Authorization: basicAuth(email, password) },
       });
@@ -279,7 +249,6 @@ export default function AuthPage() {
         placeholder={showPw ? "minimum 8 characters" : "••••••••"}
         className="h-auto flex-1 rounded-none bg-transparent px-0 py-3.5 text-body focus-visible:border-transparent focus-visible:ring-0 md:text-body"
       />
-      {/* One toggle reveals both password fields — they have to be compared to be checked. */}
       <button
         type="button"
         aria-pressed={showPw}
@@ -294,7 +263,6 @@ export default function AuthPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-11 text-foreground">
-      {/* dark hero panel — the one dark panel this screen is allowed (DESIGN.md §1 rule 5) — wraps the form card */}
       <div className="grid w-full max-w-[1240px] grid-cols-1 gap-panel rounded-xl bg-navy-900 p-3 text-navy-050 shadow-card lg:grid-cols-2">
         <div className="flex flex-col p-11">
           <div className="flex items-center gap-[11px]">
@@ -329,7 +297,6 @@ export default function AuthPage() {
         </div>
 
         <div className="flex flex-col rounded-xl bg-panel p-11 text-foreground shadow-card">
-          {/* account type — native radios keep keyboard and screen-reader behaviour */}
           <fieldset>
             <legend className={EYEBROW}>I am signing in as</legend>
             <div className="mt-2.5 grid grid-cols-2 gap-panel">
@@ -373,14 +340,12 @@ export default function AuthPage() {
             </div>
           </fieldset>
 
-          {/* Mode is switched only by the text link at the foot of the panel. */}
           <h2 className="mt-[22px] text-section font-normal">
             {isRegister ? `Create your ${lowerWord} account` : "Welcome back"}
           </h2>
 
           <form onSubmit={handleSubmit}>
             <div className="mt-6 grid gap-[14px]">
-              {/* Register pairs its four fields into the same two rows login uses for two. */}
               {isRegister ? (
                 <>
                   <div className={FIELD_ROW}>
@@ -459,8 +424,6 @@ export default function AuthPage() {
             </Button>
           </form>
 
-          {/* No client id configured means no Google: an empty one makes GIS render
-              nothing and log to the console, which reads as a broken button. */}
           {GOOGLE_CLIENT_ID && (
             <>
               <div className="mt-[22px] flex items-center gap-[14px]">

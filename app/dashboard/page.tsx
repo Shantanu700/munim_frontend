@@ -3,16 +3,6 @@ import { Overview } from "@/components/dashboard/overview";
 import { Button } from "@/components/ui/button";
 import { REQUIRED_DETAILS } from "@/lib/dashboard-data";
 
-/**
- * The layout above is a client component, but a page arrives as its `children` and is still
- * rendered on the server — so `searchParams` can be awaited here and `useSearchParams` (and
- * the Suspense boundary it drags in) is not needed.
- *
- * `?empty=1` forces the "no store details yet" branch. It exists because nothing in
- * `GET /dashboard/` reports whether a merchant has set their store up — that fetch belongs to
- * `Overview` anyway (a client component, for the same cross-origin-cookie reason every other
- * dashboard screen is), so this page can't make that call itself to decide.
- */
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const empty = (await searchParams).empty === "1";
 

@@ -25,12 +25,9 @@ import { useRazorpay } from "@/hooks/use-razorpay";
 import { cn } from "@/lib/utils";
 import type { RazorpayCredentialsWriteWritable } from "@/src/client";
 
-
-/** ProductDialog's field skin, so every form in the dashboard is visibly the same control. */
 const INPUT =
   "h-11 w-full min-w-0 rounded-full bg-panel-2 px-5 text-body outline-none focus-visible:ring-3 focus-visible:ring-ring/30";
 
-/** A button on the one dark panel: navy-200 on navy-900, since `variant` knows nothing about it. */
 const ON_NAVY = "bg-navy-200 text-navy-900 hover:bg-navy-200/85";
 
 const RAZORPAY = {
@@ -39,17 +36,8 @@ const RAZORPAY = {
   signup: "https://razorpay.com/signup/",
 };
 
-
-
-
 type Credential = keyof RazorpayCredentialsWriteWritable;
 
-/**
- * The credential fields the merchant actually typed. Blank is omitted rather than sent as
- * `""`: the write serializer is partial precisely so correcting a key id does not require
- * re-typing a secret Razorpay showed exactly once, and an empty verify body is a request to
- * re-check the pair already on file.
- */
 function creds(form: HTMLFormElement, names: readonly Credential[]) {
   const data = new FormData(form);
   const body: RazorpayCredentialsWriteWritable = {};
@@ -60,7 +48,6 @@ function creds(form: HTMLFormElement, names: readonly Credential[]) {
   return body;
 }
 
-/** Blank the secrets we just sent. The server holds them now; the boxes should not. */
 function clear(form: HTMLFormElement, names: readonly Credential[]) {
   for (const name of names) {
     const field = form.elements.namedItem(name);
@@ -105,11 +92,6 @@ export default function RazorpaySettingsPage() {
     last_event_was_test: lastWasTest,
   } = state;
 
-  // The word is always inside the pill (§1 rule 2). `is_payment_ready` is the server's own
-  // answer and keeps the allow tint to itself; below it each branch names the *first* thing
-  // still outstanding, so the pill always matches the next button to press. Ordered, not a
-  // state machine — and no `bg-deny-tint`, because an unfinished setup is a step, not a
-  // refusal.
   const status = ready
     ? "payout account connected"
     : !secretSet
@@ -307,7 +289,6 @@ export default function RazorpaySettingsPage() {
         </div>
 
         <div className="flex flex-col gap-panel">
-          {/* §1 rule 5: one dark panel per screen, and it goes to the step that gets skipped. */}
           <div className="rounded-xl bg-navy-900 p-6 text-navy-050 shadow-card">
             <div className="text-eyebrow uppercase text-navy-200">the step people get wrong</div>
             <h2 className="mt-2 text-card-title">Tell Razorpay where to report payments</h2>
@@ -355,9 +336,6 @@ export default function RazorpaySettingsPage() {
                       <CopyIcon />
                     </CopyButton>
                   </div>
-                  {/* Asked, not just done: minting over an existing secret means a webhook
-                      the merchant already configured stops verifying, silently, at the next
-                      payment. A Popover asks in place and Escape leaves the panel alone. */}
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
@@ -397,8 +375,6 @@ export default function RazorpaySettingsPage() {
                     into the Webhook Secret box on the left. Either way Munim needs it to verify
                     that an event really came from Razorpay.
                   </p>
-                  {/* Gated on the address: the secret is only useful pasted in beside it,
-                      and until the first scan sets a domain there is nowhere to paste. */}
                   <Button
                     type="button"
                     className={cn("mt-3 h-9 w-full px-4", ON_NAVY)}
@@ -433,9 +409,6 @@ export default function RazorpaySettingsPage() {
                 The server has not published an event list for your account yet.
               </p>
             )}
-            {/* `last_event_was_test` has to stay named. A merchant who has only ever
-                received our own test event has not proven Razorpay is configured, and
-                "last event: payment.captured" alone would tell them they had. */}
             <p className="mt-3.5 max-w-none text-meta text-muted-ink">
               {received && lastType
                 ? `Last event: ${lastType}${lastAt ? ` · ${moment(lastAt)}` : ""}${
@@ -445,9 +418,6 @@ export default function RazorpaySettingsPage() {
                   ? "Setup isn’t finished until one arrives and its signature verifies."
                   : "Generate the webhook secret first — there is nothing to sign an event with yet."}
             </p>
-            {/* A self-signed round trip to your own webhook URL. It proves this end verifies a
-                signature; only a real Razorpay event proves the address was pasted right.
-                Gated on the secret, because without one there is nothing to sign with. */}
             <Button
               type="button"
               variant="outline"
@@ -472,14 +442,6 @@ function PageHeading() {
   );
 }
 
-/**
- * A field label with its explanation folded into a `?` beside it. Three sentences of
- * where-to-find-this under three inputs turned the form into more prose than form; none of
- * it is needed once you know it, and all of it is needed the first time.
- *
- * `htmlFor` rather than wrapping the input in the `<label>`: the `?` is a real button, and a
- * button inside a label activates the label's control on every click.
- */
 function Field({
   label,
   hint,
@@ -504,14 +466,6 @@ function Field({
   );
 }
 
-/**
- * The `?` itself. Radix's tooltip opens on hover *and* on keyboard focus, which is the whole
- * reason the trigger is a `<button>` and not a bare icon — an explanation only a mouse can
- * reach is an explanation half the merchants never see (§7's objection to icons carrying
- * meaning alone). It stays a tooltip rather than a click-popover because nothing inside it is
- * interactive; on touch, where hover does not exist, `aria-label` is what a screen reader
- * announces and the copy is short enough to survive being read aloud.
- */
 function Hint({
   label,
   aria,

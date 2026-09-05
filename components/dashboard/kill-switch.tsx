@@ -20,17 +20,6 @@ import {
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 
-/**
- * The one control that stops every agent purchase at once.
- *
- * It shares its boolean with the topbar's agent-traffic switch, so the state lives in
- * `app/dashboard/layout.tsx` — the layout renders both consumers, which is why props do the
- * job and no context is needed.
- *
- * `PUT /policy/kill-switch/` is behind it, and the layout owns the request. Deliberately not
- * a policy rule: it has to be reachable when the store has no active policy, which is exactly
- * when a merchant most wants it, and it overrides every rule rather than sitting among them.
- */
 export function KillSwitch({
   agentsOn,
   onToggle,
@@ -40,12 +29,8 @@ export function KillSwitch({
 }) {
   const [open, setOpen] = React.useState(false);
   const { state, isMobile } = useSidebar();
-  // Branch in JS, not CSS: two hidden triggers would both register as the popover's anchor
-  // and the one without a layout box wins. On mobile the rail is a Sheet, always expanded.
   const collapsed = state === "collapsed" && !isMobile;
 
-  // The layout owns the request and everything it has to say about it. Announcing success
-  // here as well would mean a toast celebrating a change the PUT can still reverse.
   function confirm() {
     onToggle();
     setOpen(false);
@@ -56,7 +41,6 @@ export function KillSwitch({
       {collapsed ? (
         <SidebarMenu>
           <SidebarMenuItem>
-            {/* A SidebarMenuButton so the icon lands on the same 24px centre as the nav. */}
             <PopoverTrigger asChild>
               <SidebarMenuButton
                 tooltip={agentsOn ? "Kill switch · agents live" : "Kill switch · agents stopped"}
@@ -71,11 +55,6 @@ export function KillSwitch({
       ) : (
         <div className="rounded-lg bg-navy-900 p-4.5 text-navy-050">
           <div className="flex items-center gap-2.5">
-            {/* The pulse belongs to one state, not both. A live gate has traffic passing
-                through it, so it breathes; a stopped one is still, and the stillness is
-                the report. Pulsing in both states is the version this replaces — motion
-                that said nothing, on the one card where saying nothing is worst. Slow and
-                shallow by design (see the keyframe): an open store is not an alarm. */}
             <span
               className={cn(
                 "size-2 shrink-0 rounded-full transition-colors",
@@ -90,7 +69,6 @@ export function KillSwitch({
           <p className="mt-1.5 max-w-none text-meta text-navy-200">
             Stops every agent purchase at once. Your storefront keeps selling.
           </p>
-          {/* §6: on a dark panel the fill is --navy-200 with --navy-900 text. */}
           <PopoverTrigger asChild>
             <Button
               className={cn(

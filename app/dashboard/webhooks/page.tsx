@@ -9,21 +9,10 @@ import { cn } from "@/lib/utils";
 import { describeApiError } from "@/lib/api";
 import { getWebhooksHits, type WebhookHit } from "@/src/client";
 
-/** The endpoint's ceiling is 50; its default is 10. A screenful and a bit. */
 const PAGE_SIZE = 20;
 
 const COLUMNS = "grid-cols-[9.5rem_1fr_8rem_8rem_11rem]";
 
-/**
- * Every hit Razorpay (or anyone else) made on this store's webhook receiver, newest first.
- * `GET /webhooks/hits` is page-numbered — `{count, next, previous, results}` — and it is the
- * only thing that reports whether a signature check passed, so this screen is where a
- * merchant finds out that their webhook secret is wrong rather than that Razorpay is quiet.
- *
- * A client component for the same reason every other live screen here is one: the `sessionid`
- * cookie belongs to the API origin, so nothing rendered on the server can ask this endpoint
- * anything.
- */
 export default function WebhookHitsPage() {
   const [rows, setRows] = React.useState<WebhookHit[]>([]);
   const [count, setCount] = React.useState(0);
@@ -31,23 +20,15 @@ export default function WebhookHitsPage() {
   const [busy, setBusy] = React.useState(false);
   const page = React.useRef(1);
 
-  /**
-   * One page. A `.then` chain rather than async/await because an effect calls it, and
-   * `react-hooks/set-state-in-effect` is an error in this repo: an `await` does not clear
-   * that rule, a `.then` boundary does.
-   */
   const load = React.useCallback(
     (next: number) =>
       getWebhooksHits({ query: { page: next, page_size: PAGE_SIZE } })
         .then(({ data, error }) => {
           setLoading(false);
           if (!data) {
-            // 403 for an account that owns no store — the view's own sentence says that
-            // better than this could. The table falls through to its empty state.
             toast.error(describeApiError(error));
             return;
           }
-          // Advance only on success, so a page that failed is retried rather than skipped.
           page.current = next;
           setCount(data.count);
           setRows((current) => (next === 1 ? data.results : [...current, ...data.results]));
@@ -102,8 +83,6 @@ export default function WebhookHitsPage() {
                 <span className="text-meta text-muted-ink">{moment(hit.received_at)}</span>
                 <span className="text-dense">{hit.event_type || "not stated"}</span>
                 <span className="text-meta font-medium tracking-[0.03em]">{hit.outcome}</span>
-                {/* Tri-state and nullable: `null` means no check was made (an unparseable or
-                    unsigned request), which is not the same claim as a failed one. */}
                 <span className="text-dense">
                   {hit.signature_valid === null || hit.signature_valid === undefined
                     ? "not checked"
@@ -114,8 +93,6 @@ export default function WebhookHitsPage() {
                 <span className="truncate text-meta text-muted-ink">
                   {hit.razorpay_event_id || "—"}
                 </span>
-                {/* Blank in the ordinary case, so the element is skipped rather than rendered
-                    empty with its margin — the ledger's rule. */}
                 {hit.error_detail ? (
                   <span className="col-span-full text-meta text-muted-ink">
                     {hit.error_detail}

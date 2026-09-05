@@ -19,9 +19,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-/** Write, then read — the two halves of what used to be one Authorisations screen — then what
-    those mandates actually bought, and last the buyer's own platform keys, which authorise
-    their tools rather than an agent. */
 const NAV = [
   { href: "/buyer", label: "Create mandate", icon: ShieldPlusIcon },
   { href: "/buyer/mandates", label: "Mandates", icon: ShieldCheckIcon },
@@ -29,11 +26,6 @@ const NAV = [
   { href: "/buyer/api-keys", label: "API keys", icon: KeyRoundIcon },
 ] as const
 
-/**
- * The buyer rail — no `getOrdersCounts`-style badge fetch and no `KillSwitch` (both
- * merchant/store concepts). Mirrors `components/app-sidebar.tsx`'s floating shape and
- * header glyph so the chrome reads as the same product either side of the role split.
- */
 export function BuyerSidebar({
   user,
   ...props

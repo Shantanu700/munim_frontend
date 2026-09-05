@@ -4,13 +4,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { Login } from "@/src/client";
 
-/**
- * The buyer header bar. Stripped down from `components/dashboard/topbar.tsx`: no search
- * (two destinations, nothing to search), no agent-traffic switch (a store-wide concept,
- * meaningless for a buyer), and no heading — each screen carries its own `h1`, and a
- * fixed one here was wrong on whichever route it did not name. `user.merchant` is always
- * null here — a buyer's name/email are the only identity this account has.
- */
 export function Topbar({ user }: { user: Login }) {
   const initials = user.name.slice(0, 1).toUpperCase();
 
