@@ -59,7 +59,12 @@ const PAGE_SIZE = 20;
  */
 export function useIngest() {
   const [products, setProducts] = React.useState<Product[]>([]);
-  const [count, setCount] = React.useState(0);
+  // Whether another page exists, taken from the envelope's own `next` link rather than
+  // derived from `count - products.length`. Those two disagree the moment the list shifts
+  // under us — a delete drops `count` but the deduped page also drops a row, so the
+  // difference can sit at a permanent 1 and the scroll sentinel asks forever for a page
+  // the server answers 404 to. `next` is the server's answer to the same question.
+  const [hasMore, setHasMore] = React.useState(false);
   const [progress, setProgress] = React.useState<IngestProgress | null>(null);
   const [status, setStatus] = React.useState<IngestStatus>("loading");
   const [busy, setBusy] = React.useState(false);
@@ -74,8 +79,8 @@ export function useIngest() {
   // The job the open stream belongs to, so `cancel()` has a uuid to address. A ref for the
   // same reason: `status === "running"` is what renders the Stop button, not this.
   const job = React.useRef<string | null>(null);
-  // Likewise the page we are on. `hasMore` is derived from `count`, so nothing reads this
-  // during a render — only `loadMore` does, and a ref keeps it out of every callback's deps.
+  // Likewise the page we are on. Nothing reads it during a render — only `loadMore`
+  // does, and a ref keeps it out of every callback's dependency list.
   const page = React.useRef(1);
 
   /**
@@ -90,10 +95,25 @@ export function useIngest() {
     (next: number) =>
       getIngestProducts({ query: { page: next, page_size: PAGE_SIZE } })
         .then(({ data, error }) => {
-          if (!data) return toast.error(describeApiError(error));
+          if (!data) {
+            // Stop paging. `page.current` did not advance, so leaving the sentinel armed
+            // would re-request the page that just failed on the very next intersection.
+            setHasMore(false);
+            return toast.error(describeApiError(error));
+          }
           page.current = next;
-          setCount(data.count);
-          setProducts((rows) => (next === 1 ? data.results : [...rows, ...data.results]));
+          setHasMore(data.next != null);
+          // Page numbers over a list that shifts: a delete (or a streamed prepend) moves
+          // every row back or forward one, so the next page re-serves a row already held.
+          // Dedupe on `uuid` here rather than at each caller — this is the one place a page
+          // is appended. Keep the row we have; the new copy is the same row, one slot over.
+          setProducts((rows) => {
+            if (next === 1) return data.results;
+            // `uuid` is optional on the wire, so a blank one identifies nothing — those
+            // rows pass through rather than collapsing into one.
+            const seen = new Set(rows.map((row) => row.uuid).filter(Boolean));
+            return [...rows, ...data.results.filter((row) => !row.uuid || !seen.has(row.uuid))];
+          });
         })
         .catch(() => toast.error(OFFLINE)),
     []
@@ -249,7 +269,6 @@ export function useIngest() {
         return false;
       }
       setProducts((rows) => [data, ...rows.filter((row) => row.uuid !== data.uuid)]);
-      setCount((n) => n + 1);
       toast.success("Product added.");
       return true;
     } catch {
@@ -289,7 +308,6 @@ export function useIngest() {
         return false;
       }
       setProducts((rows) => rows.filter((row) => row.uuid !== uuid));
-      setCount((n) => Math.max(0, n - 1));
       toast.success("Product deleted.");
       return true;
     } catch {
@@ -308,9 +326,7 @@ export function useIngest() {
 
   return {
     products,
-    // Streamed rows prepend without touching `count`, so a scan in flight can push the
-    // loaded list past the server's total. Clamp rather than showing "Load more (-3 left)".
-    remaining: Math.max(0, count - products.length),
+    hasMore,
     progress,
     status,
     busy,

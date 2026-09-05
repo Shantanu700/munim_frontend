@@ -50,7 +50,7 @@ const COLUMNS =
  * shell scrolls normally.
  */
 export default function ProductsPage() {
-  const { products, remaining, progress, status, busy, merchant, start, cancel, loadMore, create, update, remove } =
+  const { products, hasMore, progress, status, busy, merchant, start, cancel, loadMore, create, update, remove } =
     useIngest();
   // `undefined` closed, `null` adding, a uuid editing that row. One dialog for the whole
   // page rather than one per row — mounting 50 of them to show at most one is waste.
@@ -92,7 +92,7 @@ export default function ProductsPage() {
           rows={products}
           status={status}
           progress={progress}
-          remaining={remaining}
+          hasMore={hasMore}
           busy={busy}
           onLoadMore={loadMore}
           onEdit={setEditing}
@@ -198,7 +198,7 @@ type CatalogueProps = {
   rows: Product[];
   status: IngestStatus;
   progress: IngestProgress | null;
-  remaining: number;
+  hasMore: boolean;
   busy: boolean;
   onLoadMore: () => void;
   onEdit: (uuid: string | null) => void;
@@ -222,7 +222,7 @@ function Catalogue({ rows, status, progress, ...rest }: CatalogueProps) {
 function FoundTable({
   rows,
   scanning,
-  remaining,
+  hasMore,
   busy,
   onLoadMore,
   onEdit,
@@ -330,7 +330,7 @@ function FoundTable({
 
           {/* Inside the scroller, so it sits at the foot of the list rather than pinned
               below a card the merchant has not scrolled to the end of. */}
-          {remaining > 0 ? <LoadMore busy={busy} onLoadMore={onLoadMore} /> : null}
+          {hasMore ? <LoadMore busy={busy} onLoadMore={onLoadMore} /> : null}
         </div>
       </div>
     </Panel>
