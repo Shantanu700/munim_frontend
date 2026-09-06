@@ -185,7 +185,10 @@ export default function AuthPage() {
       shape: "pill",
       size: "large",
       text: "continue_with",
-      width: 400,
+      // `width` is GSI's *minimum*, not a ceiling, and it only accepts 200–400 — so it can
+      // never keep the button inside a narrower panel. It is a hint for the desktop case;
+      // the real clamp is the `!w-full` on the wrapper below, which beats GSI's inline width.
+      width: Math.min(400, Math.max(200, googleRef.current.offsetWidth)),
     });
   }
 
@@ -262,9 +265,9 @@ export default function AuthPage() {
   );
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-11 text-foreground">
-      <div className="grid w-full max-w-[1240px] grid-cols-1 gap-panel rounded-xl bg-navy-900 p-3 text-navy-050 shadow-card lg:grid-cols-2">
-        <div className="flex flex-col p-11">
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground sm:p-8 lg:p-11">
+      <div className="grid w-full max-w-[1240px] grid-cols-1 gap-panel rounded-xl bg-navy-900 p-panel text-navy-050 shadow-card sm:p-3 lg:grid-cols-2">
+        <div className="flex flex-col p-6 sm:p-8 lg:p-11">
           <div className="flex items-center gap-[11px]">
             <span className="flex size-[34px] items-center justify-center rounded-md bg-navy-200 text-card-title text-navy-900">
               म
@@ -272,7 +275,7 @@ export default function AuthPage() {
             <span className="text-section font-semibold tracking-tight">munim</span>
           </div>
 
-          <div className="mt-11 inline-flex items-center gap-2 self-start rounded-pill bg-navy-200/12 px-4 py-2">
+          <div className="mt-8 inline-flex items-center gap-2 self-start rounded-pill bg-navy-200/12 px-4 py-2 lg:mt-11">
             <span className="size-[7px] rounded-full bg-navy-200" />
             <span className="text-eyebrow uppercase text-navy-200">{copy.eyebrow}</span>
           </div>
@@ -282,10 +285,10 @@ export default function AuthPage() {
             {copy.body}
           </p>
 
-          <div className="mt-auto grid grid-cols-3 gap-panel pt-11">
+          <div className="mt-auto grid grid-cols-3 gap-panel pt-8 lg:pt-11">
             {copy.stats.map((stat) => (
-              <div key={stat.label} className="rounded-lg bg-navy-200/12 p-[16px]">
-                <div className="text-panel leading-none tabular-nums text-2xl">{stat.value}</div>
+              <div key={stat.label} className="rounded-lg bg-navy-200/12 p-3 sm:p-4">
+                <div className="text-panel leading-none tabular-nums">{stat.value}</div>
                 <div className="mt-2.5 text-eyebrow uppercase text-navy-200">{stat.label}</div>
               </div>
             ))}
@@ -296,7 +299,7 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <div className="flex flex-col rounded-xl bg-panel p-11 text-foreground shadow-card">
+        <div className="flex flex-col rounded-xl bg-panel p-6 text-foreground shadow-card sm:p-8 lg:p-11">
           <fieldset>
             <legend className={EYEBROW}>I am signing in as</legend>
             <div className="mt-2.5 grid grid-cols-2 gap-panel">
@@ -306,7 +309,7 @@ export default function AuthPage() {
                   <label
                     key={key}
                     className={cn(
-                      "cursor-pointer rounded-lg px-[18px] py-4 transition-colors",
+                      "cursor-pointer rounded-lg px-3.5 py-3.5 transition-colors sm:px-[18px] sm:py-4",
                       "focus-within:ring-3 focus-within:ring-ring/30",
                       selected ? "bg-tile text-tile-foreground" : "bg-panel-2 text-foreground"
                     )}
@@ -437,7 +440,10 @@ export default function AuthPage() {
                 strategy="afterInteractive"
                 onReady={initGoogle}
               />
-              <div ref={googleRef} className="mt-[14px] flex min-h-11 justify-center" />
+              <div
+                ref={googleRef}
+                className="mt-[14px] flex min-h-11 justify-center **:max-w-full [&>div]:w-full! [&_iframe]:w-full!"
+              />
             </>
           )}
 
@@ -452,7 +458,7 @@ export default function AuthPage() {
             </button>
           </p>
 
-          <div className="mt-[22px] flex items-center gap-[18px] border-t border-rule pt-[22px]">
+          <div className="mt-[22px] flex flex-wrap items-center gap-x-[18px] gap-y-1.5 border-t border-rule pt-[22px]">
             <span className="text-meta text-muted-ink">Razorpay settlement</span>
             <span className="text-meta text-muted-ink">MCP endpoint</span>
             <span className="text-meta text-muted-ink">India-hosted data</span>
