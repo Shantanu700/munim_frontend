@@ -932,10 +932,11 @@ login/register toggle and takes no URL param.
 - Two navy panels (hero and closing), where DESIGN.md §1 rule 5 allows one per screen. The
   design file draws both and a landing page is not a dashboard screen; the rule stands for
   everything under `/dashboard`.
-- **No theme toggle, and the navy panels stay navy.** An inverting hero (near-white in dark
-  mode) was tried and reverted on request — it read as wrong. The rest of the page is role
-  tokens and so still follows `.dark` if the visitor's OS asks for it; pin the page to light
-  if that ever needs to stop.
+- **The topbar has a `ThemeToggle`, but the navy panels stay navy.** An inverting hero
+  (near-white in dark mode) was tried and reverted on request — it read as wrong. The rest of
+  the page is role tokens and so follows `.dark`, whether the toggle or the visitor's OS set
+  it. `/auth` carries the same toggle, in the corner of its light form panel — not on its
+  navy half, where a ghost button is near-invisible in light mode.
 - **Full-bleed, unlike the design file's 1180px column.** The only gutter is the 6px panel
   gap; line length is held by the `max-w-*` on individual paragraphs, so widening the page
   never widens a measure. The topbar's scroll narrowing became proportional

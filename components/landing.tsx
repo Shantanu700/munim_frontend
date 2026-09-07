@@ -4,6 +4,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 type Tone = "allow" | "step" | "deny";
@@ -403,6 +404,7 @@ export function Landing() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-1.5">
+          <ThemeToggle />
           <Button asChild className="h-10 bg-panel-2 px-5 text-dense text-foreground hover:bg-faint">
             <Link href="/auth">Sign in</Link>
           </Button>

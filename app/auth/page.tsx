@@ -15,6 +15,7 @@ import {
 import { basicAuth, describeApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 declare global {
@@ -302,6 +303,9 @@ export default function AuthPage() {
         </div>
 
         <div className="flex flex-col rounded-xl bg-panel p-6 text-foreground shadow-card sm:p-8 lg:p-11">
+          <div className="-mt-2 -mr-2 mb-1 self-end">
+            <ThemeToggle />
+          </div>
           <fieldset>
             <legend className={EYEBROW}>I am signing in as</legend>
             <div className="mt-2.5 grid grid-cols-2 gap-panel">
