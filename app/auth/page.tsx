@@ -163,7 +163,8 @@ export default function AuthPage() {
 
   function initGoogle() {
     if (!GOOGLE_CLIENT_ID || !googleRef.current || !window.google) return;
-    window.google.accounts.id.initialize({
+    const google = window.google;
+    google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: async ({ credential }) => {
         setPending(true);
@@ -180,15 +181,16 @@ export default function AuthPage() {
         }
       },
     });
-    window.google.accounts.id.renderButton(googleRef.current, {
-      theme: "outline",
-      shape: "pill",
-      size: "large",
-      text: "continue_with",
-      // `width` is GSI's *minimum*, not a ceiling, and it only accepts 200–400 — so it can
-      // never keep the button inside a narrower panel. It is a hint for the desktop case;
-      // the real clamp is the `!w-full` on the wrapper below, which beats GSI's inline width.
-      width: Math.min(400, Math.max(200, googleRef.current.offsetWidth)),
+    requestAnimationFrame(() => {
+      const box = googleRef.current;
+      if (!box) return;
+      google.accounts.id.renderButton(box, {
+        theme: "outline",
+        shape: "pill",
+        size: "large",
+        text: "continue_with",
+        width: Math.min(400, Math.max(200, box.offsetWidth)),
+      });
     });
   }
 
@@ -418,7 +420,11 @@ export default function AuthPage() {
               )}
             </div>
 
-            <Button type="submit" disabled={pending} className="mt-[22px] h-11 w-full text-pretty">
+            <Button
+              type="submit"
+              disabled={pending}
+              className="mt-[22px] mx-auto flex h-11 w-full max-w-100 text-pretty"
+            >
               {pending
                 ? "Working…"
                 : isRegister
@@ -429,7 +435,7 @@ export default function AuthPage() {
 
           {GOOGLE_CLIENT_ID && (
             <>
-              <div className="mt-[22px] flex items-center gap-[14px]">
+              <div className="mt-[22px] mx-auto flex w-full max-w-100 items-center gap-[14px]">
                 <span className="h-px flex-1 bg-rule" />
                 <span className="text-meta text-muted-ink">or</span>
                 <span className="h-px flex-1 bg-rule" />
@@ -442,7 +448,7 @@ export default function AuthPage() {
               />
               <div
                 ref={googleRef}
-                className="mt-[14px] flex min-h-11 justify-center **:max-w-full [&>div]:w-full! [&_iframe]:w-full!"
+                className="mt-[14px] flex min-h-11 justify-center **:max-w-full"
               />
             </>
           )}
