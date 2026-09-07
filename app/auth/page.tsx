@@ -448,7 +448,7 @@ export default function AuthPage() {
               />
               <div
                 ref={googleRef}
-                className="mt-[14px] flex min-h-11 justify-center **:max-w-full"
+                className="mt-[14px] mx-auto flex min-h-11 w-full max-w-100 justify-center **:max-w-full [&>div]:flex [&>div]:w-full [&>div]:justify-center"
               />
             </>
           )}
