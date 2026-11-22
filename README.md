@@ -105,3 +105,26 @@ Docs at the root: `PRODUCT.md` (what the product is), `DESIGN.md` (binding desig
   middleware, which is why the auth guards are client-side layouts.
 - **All feedback goes through Sonner.** One `<Toaster />` in `app/layout.tsx`; there is no
   inline error copy in any page.
+
+## Going live
+
+```bash
+bun install --frozen-lockfile
+bun run build
+bun start        # port 3000; put an HTTPS proxy or your host's edge in front
+```
+
+Checklist:
+
+- **Env at build time.** `NEXT_PUBLIC_*` values are inlined when you build, so set them before
+  `bun run build`, not just at runtime. Set `NEXT_PUBLIC_API_URL` (the production API origin,
+  https), `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, and optionally `NEXT_PUBLIC_MCP_URL`, which shows
+  the MCP endpoint on the buyer API-keys screen.
+- **Same site as the API.** The session is a cross-origin `Secure; SameSite=None` cookie.
+  Browsers that block third-party cookies drop it unless the app and API share a registrable
+  domain, for example `app.example.com` and `api.example.com`.
+- **Google sign-in.** Add the production origin to the OAuth client's *Authorised JavaScript
+  origins* in Google Cloud Console.
+- **Backend CORS.** Ask the backend to allow only this origin, not every origin.
+- **TLS check.** The `build` and `start` scripts set `NODE_TLS_REJECT_UNAUTHORIZED=0` for the
+  self-signed dev cert. Drop it for production builds so Node verifies certificates.
